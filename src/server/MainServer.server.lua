@@ -37,6 +37,7 @@ local Remotes = {
 	UpdateCheckpoint = CreateRemote("RemoteEvent", "UpdateCheckpoint"),
 	GetCheckpoint = CreateRemote("RemoteFunction", "GetCheckpoint"),
 	TeleportToCheckpoint = CreateRemote("RemoteEvent", "TeleportToCheckpoint"),
+	DemoteCheckpoint = CreateRemote("RemoteEvent", "DemoteCheckpoint"),
 	
 	-- UI Trigger Remotes
 	ShowPopup = CreateRemote("RemoteEvent", "ShowPopup"),
@@ -48,6 +49,7 @@ local AdminSystem = require(Modules.AdminSystem)
 local CheckpointSystem = require(Modules.CheckpointSystem)
 local TrollSystem = require(Modules.TrollSystem)
 local PurchaseSystem = require(Modules.PurchaseSystem)
+local LeaderstatSystem = require(Modules.LeaderstatSystem)
 
 -- Initialize Systems
 AdminSystem.Init(Remotes)
@@ -58,5 +60,6 @@ PurchaseSystem.Init(Remotes, {
 	Troll = TrollSystem,
 	Checkpoint = CheckpointSystem
 })
+LeaderstatSystem.Init()
 
 print("Server Systems Initialized")
