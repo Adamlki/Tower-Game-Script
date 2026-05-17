@@ -6,27 +6,127 @@ local PlayerGui = Player:WaitForChild("PlayerGui")
 local UIManager = {}
 local MainGui = nil
 
--- Utility for animations
-local function applyHoverAnim(button)
+function UIManager.ApplyButtonAnimation(button)
+	local TweenService = game:GetService("TweenService")
 	local originalSize = button.Size
-	local originalColor = button.BackgroundColor3
-	local h, s, v = Color3.toHSV(originalColor)
-	local hoverColor = Color3.fromHSV(h, s, math.clamp(v + 0.2, 0, 1))
+	local originalRotation = button.Rotation
+	
+	local hoverSound = button:FindFirstChild("HoverSound") or Instance.new("Sound")
+	hoverSound.Name = "HoverSound"
+	hoverSound.SoundId = "rbxassetid://6895079853"
+	hoverSound.Volume = 0.2
+	hoverSound.PlaybackSpeed = 1.2
+	hoverSound.Parent = button
+	
+	local clickSound = button:FindFirstChild("ClickSound") or Instance.new("Sound")
+	clickSound.Name = "ClickSound"
+	clickSound.SoundId = "rbxassetid://6895079853"
+	clickSound.Volume = 0.8
+	clickSound.Parent = button
 	
 	button.MouseEnter:Connect(function()
-		TweenService:Create(button, TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-			BackgroundColor3 = hoverColor,
-			Size = originalSize + UDim2.new(0, 4, 0, 4),
-			Position = button.Position - UDim2.new(0, 2, 0, 2)
+		hoverSound:Play()
+		TweenService:Create(button, TweenInfo.new(0.15, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+			Size = originalSize + UDim2.new(0, 6, 0, 6),
+			Rotation = originalRotation + 2
 		}):Play()
 	end)
 	
 	button.MouseLeave:Connect(function()
 		TweenService:Create(button, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-			BackgroundColor3 = originalColor,
 			Size = originalSize,
-			Position = button.Position + UDim2.new(0, 2, 0, 2)
+			Rotation = originalRotation
 		}):Play()
+	end)
+	
+	button.MouseButton1Down:Connect(function()
+		clickSound:Play()
+		TweenService:Create(button, TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+			Size = originalSize - UDim2.new(0, 3, 0, 3),
+			Rotation = originalRotation - 2
+		}):Play()
+	end)
+	
+	button.MouseButton1Up:Connect(function()
+		TweenService:Create(button, TweenInfo.new(0.15, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+			Size = originalSize + UDim2.new(0, 6, 0, 6),
+			Rotation = originalRotation + 2
+		}):Play()
+	end)
+	
+	-- Reset otomatis kalau GUI disembunyikan (untuk mencegah bug nyangkut efek membesar)
+	local screenGui = button:FindFirstAncestorOfClass("ScreenGui")
+	if screenGui then
+		screenGui:GetPropertyChangedSignal("Enabled"):Connect(function()
+			if not screenGui.Enabled then
+				TweenService:Create(button, TweenInfo.new(0), {
+					Size = originalSize,
+					Rotation = originalRotation
+				}):Play()
+			end
+		end)
+	end
+	
+	-- Reset tambahan kalau parent langsungnya disembunyikan (seperti ConfirmationFrame)
+	if button.Parent and button.Parent:IsA("GuiObject") then
+		button.Parent:GetPropertyChangedSignal("Visible"):Connect(function()
+			if not button.Parent.Visible then
+				TweenService:Create(button, TweenInfo.new(0), {
+					Size = originalSize,
+					Rotation = originalRotation
+				}):Play()
+			end
+		end)
+	end
+end
+
+function UIManager.AnimateFrameIn(frame)
+	if not frame then return end
+	frame.Visible = true
+	
+	local TweenService = game:GetService("TweenService")
+	local uiScale = frame:FindFirstChild("UIScale")
+	if not uiScale then
+		uiScale = Instance.new("UIScale")
+		uiScale.Parent = frame
+	end
+	
+	uiScale.Scale = 0
+	TweenService:Create(uiScale, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Scale = 1}):Play()
+	
+	-- Fade main background
+	local origBg = frame:GetAttribute("OrigBgTrans")
+	if not origBg then
+		origBg = frame.BackgroundTransparency
+		frame:SetAttribute("OrigBgTrans", origBg)
+	end
+	frame.BackgroundTransparency = 1
+	TweenService:Create(frame, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundTransparency = origBg}):Play()
+end
+
+function UIManager.AnimateFrameOut(frame, onComplete)
+	if not frame then return end
+	
+	local TweenService = game:GetService("TweenService")
+	local uiScale = frame:FindFirstChild("UIScale")
+	if not uiScale then
+		uiScale = Instance.new("UIScale")
+		uiScale.Parent = frame
+	end
+	
+	local tween = TweenService:Create(uiScale, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {Scale = 0})
+	tween:Play()
+	
+	local origBg = frame:GetAttribute("OrigBgTrans")
+	if origBg then
+		TweenService:Create(frame, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {BackgroundTransparency = 1}):Play()
+	end
+	
+	local connection
+	connection = tween.Completed:Connect(function()
+		connection:Disconnect()
+		frame.Visible = false
+		if onComplete then onComplete() end
 	end)
 end
 
@@ -89,7 +189,7 @@ function UIManager.CreateUI()
 		btn.BackgroundColor3 = color
 		btn.AutoButtonColor = false
 		makeRounded(btn, 8)
-		applyHoverAnim(btn)
+		UIManager.ApplyButtonAnimation(btn)
 		btn.Parent = parent
 		return btn
 	end
@@ -117,8 +217,8 @@ function UIManager.CreateUI()
 	MainHUD.Size = UDim2.new(1, 0, 1, 0)
 	MainHUD.BackgroundTransparency = 1
 	MainHUD.Parent = Gui
+	MainHUD.Parent = Gui
 	
-	local TrollBtn = createButton("TrollBtn", "TROLL MENU", UDim2.new(0, 140, 0, 45), UDim2.new(0, 20, 0.5, -50), Color3.fromRGB(220, 50, 50), MainHUD)
 	local AdminBtn = createButton("AdminBtn", "ADMIN PANEL", UDim2.new(0, 140, 0, 45), UDim2.new(0, 20, 0.5, 5), Color3.fromRGB(50, 200, 100), MainHUD)
 	AdminBtn.Visible = false
 	
@@ -135,81 +235,7 @@ function UIManager.CreateUI()
 	makeRounded(CPNotif, 8)
 	makeShadow(CPNotif)
 	CPNotif.Parent = MainHUD
-	
-	-- TrollPanel
-	local TrollPanel = createPanel("TrollPanel", UDim2.new(0, 220, 0, 500), UDim2.new(1, 50, 0.5, -250), Gui) -- Offscreen right
-	TrollPanel.BackgroundTransparency = 0.05
-	
-	local TrollTitle = Instance.new("TextLabel")
-	TrollTitle.Size = UDim2.new(1, 0, 0, 40)
-	TrollTitle.Text = "SELECT TROLL"
-	TrollTitle.Font = Enum.Font.GothamBlack
-	TrollTitle.TextSize = 16
-	TrollTitle.TextColor3 = Color3.new(1,1,1)
-	TrollTitle.BackgroundTransparency = 1
-	TrollTitle.Parent = TrollPanel
-	
-	local TrollButtons = Instance.new("ScrollingFrame")
-	TrollButtons.Name = "TrollButtons"
-	TrollButtons.Size = UDim2.new(1, -20, 1, -50)
-	TrollButtons.Position = UDim2.new(0, 10, 0, 40)
-	TrollButtons.BackgroundTransparency = 1
-	TrollButtons.ScrollBarThickness = 1
-	TrollButtons.CanvasSize = UDim2.new(0, 0, 0, 0)
-	TrollButtons.AutomaticCanvasSize = Enum.AutomaticSize.Y
-	TrollButtons.Parent = TrollPanel
-	
-	local layout = Instance.new("UIListLayout")
-	layout.Padding = UDim.new(0, 5)
-	layout.Parent = TrollButtons
-	
-	local trolls = {"Kill", "Fling", "Kick", "Slow", "Earthquake", "Jumpscare", "Freeze", "SetFire", "KillAll", "SlowAll"}
-	for i, t in ipairs(trolls) do
-		local btn = createButton(t .. "Btn", t, UDim2.new(1, 0, 0, 35), UDim2.new(), Color3.fromRGB(180, 50, 50), TrollButtons)
-	end
-	
-	-- JumpPanel
-	local JumpPanel = createPanel("JumpPanel", UDim2.new(0, 200, 0, 160), UDim2.new(0, 20, 0.5, 60), Gui)
-	
-	local JumpTitle = Instance.new("TextLabel")
-	JumpTitle.Size = UDim2.new(1, 0, 0, 30)
-	JumpTitle.Text = "JUMP UPGRADES"
-	JumpTitle.Font = Enum.Font.GothamBlack
-	JumpTitle.TextColor3 = Color3.new(1,1,1)
-	JumpTitle.BackgroundTransparency = 1
-	JumpTitle.Parent = JumpPanel
-	
-	local BuyJumpBtn = createButton("BuyBtn", "Buy Jump", UDim2.new(1, -20, 0, 35), UDim2.new(0, 10, 0, 35), Color3.fromRGB(0, 150, 220), JumpPanel)
-	local JumpInput = createInput("JumpInput", "Count", UDim2.new(0, 80, 0, 35), UDim2.new(0, 10, 0, 80), JumpPanel)
-	local ApplyJumpBtn = createButton("ApplyBtn", "Apply", UDim2.new(0, 85, 0, 35), UDim2.new(1, -95, 0, 80), Color3.fromRGB(0, 180, 100), JumpPanel)
-	
-	local JumpInfo = Instance.new("TextLabel")
-	JumpInfo.Name = "JumpInfo"
-	JumpInfo.Size = UDim2.new(1, -20, 0, 25)
-	JumpInfo.Position = UDim2.new(0, 10, 0, 125)
-	JumpInfo.Text = "Max Jump: 1"
-	JumpInfo.Font = Enum.Font.GothamMedium
-	JumpInfo.TextColor3 = Color3.fromRGB(200, 200, 200)
-	JumpInfo.BackgroundTransparency = 1
-	JumpInfo.Parent = JumpPanel
-	
-	-- Spectate UI
-	local SpectateUI = createPanel("SpectateUI", UDim2.new(0, 350, 0, 60), UDim2.new(0.5, -175, 1, 50), Gui) -- Offscreen bottom
-	
-	local PrevBtn = createButton("PrevBtn", "◀", UDim2.new(0, 50, 0, 40), UDim2.new(0, 10, 0.5, -20), Color3.fromRGB(60, 60, 70), SpectateUI)
-	local NextBtn = createButton("NextBtn", "▶", UDim2.new(0, 50, 0, 40), UDim2.new(1, -60, 0.5, -20), Color3.fromRGB(60, 60, 70), SpectateUI)
-	
-	local PlayerNameLabel = Instance.new("TextLabel")
-	PlayerNameLabel.Name = "PlayerNameLabel"
-	PlayerNameLabel.Size = UDim2.new(1, -120, 1, 0)
-	PlayerNameLabel.Position = UDim2.new(0, 60, 0, 0)
-	PlayerNameLabel.Text = "Spectating..."
-	PlayerNameLabel.Font = Enum.Font.GothamBold
-	PlayerNameLabel.TextSize = 18
-	PlayerNameLabel.TextColor3 = Color3.new(1,1,1)
-	PlayerNameLabel.BackgroundTransparency = 1
-	PlayerNameLabel.Parent = SpectateUI
-	
+
 	-- Checkpoint Popup
 	local CheckpointPopup = createPanel("CheckpointPopup", UDim2.new(0, 320, 0, 160), UDim2.new(0.5, -160, -0.5, 0), Gui)
 	CheckpointPopup.Visible = false
@@ -228,24 +254,7 @@ function UIManager.CreateUI()
 	local SkipBtn = createButton("SkipBtn", "Skip(5R$)", UDim2.new(0, 100, 0, 40), UDim2.new(0.5, -50, 0, 100), Color3.fromRGB(220, 150, 0), CheckpointPopup)
 	local NoBtn = createButton("NoBtn", "No", UDim2.new(0, 80, 0, 40), UDim2.new(1, -95, 0, 100), Color3.fromRGB(150, 50, 50), CheckpointPopup)
 	
-	-- Troll Confirm Popup
-	local TrollConfirmPopup = createPanel("TrollConfirmPopup", UDim2.new(0, 320, 0, 160), UDim2.new(0.5, -160, -0.5, 0), Gui)
-	TrollConfirmPopup.Visible = false
-	
-	local TrollConfirmLabel = Instance.new("TextLabel")
-	TrollConfirmLabel.Name = "Label"
-	TrollConfirmLabel.Size = UDim2.new(1, -20, 0, 80)
-	TrollConfirmLabel.Position = UDim2.new(0, 10, 0, 10)
-	TrollConfirmLabel.Text = "Are you sure?"
-	TrollConfirmLabel.Font = Enum.Font.GothamBold
-	TrollConfirmLabel.TextSize = 16
-	TrollConfirmLabel.TextWrapped = true
-	TrollConfirmLabel.TextColor3 = Color3.new(1,1,1)
-	TrollConfirmLabel.BackgroundTransparency = 1
-	TrollConfirmLabel.Parent = TrollConfirmPopup
-	
-	local TrollYesBtn = createButton("YesBtn", "Yes", UDim2.new(0, 100, 0, 40), UDim2.new(0, 30, 0, 100), Color3.fromRGB(50, 150, 50), TrollConfirmPopup)
-	local TrollNoBtn = createButton("NoBtn", "No", UDim2.new(0, 100, 0, 40), UDim2.new(1, -130, 0, 100), Color3.fromRGB(150, 50, 50), TrollConfirmPopup)
+
 	
 	-- AdminPanel
 	local AdminPanel = createPanel("AdminPanel", UDim2.new(0, 300, 0, 180), UDim2.new(0.5, -150, -0.5, 0), Gui)

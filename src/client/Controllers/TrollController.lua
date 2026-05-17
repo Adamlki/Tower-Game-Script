@@ -14,41 +14,65 @@ local panelOpen = false
 function TrollController.Init(networkRemotes)
 	Remotes = networkRemotes
 	
-	local Gui = UIManager.GetGui()
-	local MainHUD = Gui:WaitForChild("MainHUD")
-	local TrollBtn = MainHUD:WaitForChild("TrollBtn")
-	local TrollPanel = Gui:WaitForChild("TrollPanel")
-	local TrollButtons = TrollPanel:WaitForChild("TrollButtons")
+	local PlayerGui = Players.LocalPlayer:WaitForChild("PlayerGui")
+	
+	-- Menu Utama (Troll Button)
+	local MenuUtama = PlayerGui:WaitForChild("MenuUtama")
+	local TrollBtn = MenuUtama:WaitForChild("MainFrame"):WaitForChild("TrollBtn")
+	
+	-- Select Troll Gui
+	local TrollGui = PlayerGui:WaitForChild("SelectTrollGui")
+	local TrollMainFrame = TrollGui:WaitForChild("TrollMainFrame")
+	local CloseBtn = TrollMainFrame:WaitForChild("CloseBtn")
+	
+	UIManager.ApplyButtonAnimation(TrollBtn)
+	UIManager.ApplyButtonAnimation(CloseBtn)
 	
 	TrollBtn.MouseButton1Click:Connect(function()
 		TrollController.TogglePanel()
 	end)
 	
-	local currentPendingTroll = nil
-	local TrollConfirmPopup = Gui:WaitForChild("TrollConfirmPopup")
+	CloseBtn.MouseButton1Click:Connect(function()
+		if panelOpen then
+			TrollController.TogglePanel()
+		end
+	end)
 	
-	for _, btn in ipairs(TrollButtons:GetChildren()) do
+	local currentPendingTroll = nil
+	local ConfirmationFrame = TrollGui:WaitForChild("ConfirmationFrame")
+	local ConfirmMainFrame = ConfirmationFrame:WaitForChild("MainFrame")
+	local ConfirmLabel = ConfirmMainFrame:WaitForChild("TextLabel")
+	local ConfirmYesBtn = ConfirmMainFrame:WaitForChild("FrameBtn"):WaitForChild("YesBtn")
+	local ConfirmCloseBtn = ConfirmMainFrame:WaitForChild("FrameBtn"):WaitForChild("CloseBtn")
+	
+	UIManager.ApplyButtonAnimation(ConfirmYesBtn)
+	UIManager.ApplyButtonAnimation(ConfirmCloseBtn)
+	
+	local BtnFrame = TrollMainFrame:WaitForChild("BtnFrame")
+	
+	for _, btn in ipairs(BtnFrame:GetChildren()) do
 		if btn:IsA("TextButton") then
+			UIManager.ApplyButtonAnimation(btn)
+			
 			btn.MouseButton1Click:Connect(function()
 				local trollType = btn.Name:gsub("Btn", "")
 				local target = SpectateController.GetTarget()
 				
 				currentPendingTroll = trollType
-				local label = TrollConfirmPopup:WaitForChild("Label")
 				
 				if trollType:match("All") then
-					label.Text = "Are you sure you want to " .. trollType .. " everyone?"
+					ConfirmLabel.Text = "Are you sure you want to " .. trollType .. " everyone?"
 				else
-					local name = target and target.Name or "Unknown"
-					label.Text = "Are you sure you want to " .. trollType .. " " .. name .. "?"
+					local name = target and target.DisplayName or "Unknown"
+					ConfirmLabel.Text = "Are you sure you want to " .. trollType .. " " .. name .. "?"
 				end
 				
-				UIManager.TweenPanelIn(TrollConfirmPopup, UDim2.new(0.5, -160, 0.5, -80))
+				UIManager.AnimateFrameIn(ConfirmationFrame)
 			end)
 		end
 	end
 	
-	TrollConfirmPopup.YesBtn.MouseButton1Click:Connect(function()
+	ConfirmYesBtn.MouseButton1Click:Connect(function()
 		if currentPendingTroll then
 			local target = SpectateController.GetTarget()
 			if target then
@@ -56,13 +80,13 @@ function TrollController.Init(networkRemotes)
 			end
 			TrollController.ExecuteTroll(currentPendingTroll)
 			currentPendingTroll = nil
-			UIManager.TweenPanelOut(TrollConfirmPopup, UDim2.new(0.5, -160, -0.5, 0))
+			UIManager.AnimateFrameOut(ConfirmationFrame)
 		end
 	end)
 	
-	TrollConfirmPopup.NoBtn.MouseButton1Click:Connect(function()
+	ConfirmCloseBtn.MouseButton1Click:Connect(function()
 		currentPendingTroll = nil
-		UIManager.TweenPanelOut(TrollConfirmPopup, UDim2.new(0.5, -160, -0.5, 0))
+		UIManager.AnimateFrameOut(ConfirmationFrame)
 	end)
 	
 	-- Handle Jumpscare & Earthquake effects
@@ -99,17 +123,38 @@ function TrollController.SetSelectedTarget(userId)
 end
 
 function TrollController.TogglePanel()
-	local Gui = UIManager.GetGui()
-	local TrollPanel = Gui:WaitForChild("TrollPanel")
+	local PlayerGui = Players.LocalPlayer:WaitForChild("PlayerGui")
+	local TrollGui = PlayerGui:WaitForChild("SelectTrollGui")
 	
 	panelOpen = not panelOpen
 	
 	if panelOpen then
 		SpectateController.Start()
-		UIManager.TweenPanelIn(TrollPanel, UDim2.new(1, -250, 0.5, -250))
+		TrollGui.Enabled = true
+		local TrollMainFrame = TrollGui:WaitForChild("TrollMainFrame")
+		local SpectateFrame = TrollGui:WaitForChild("SpectateFrame")
+		UIManager.AnimateFrameIn(TrollMainFrame)
+		UIManager.AnimateFrameIn(SpectateFrame)
+		
+		local MenuUtama = PlayerGui:WaitForChild("MenuUtama")
+		local JumpGui = PlayerGui:WaitForChild("JumpUpgradeGui")
+		UIManager.AnimateFrameOut(MenuUtama:WaitForChild("MainFrame"))
+		UIManager.AnimateFrameOut(JumpGui:WaitForChild("Frame"))
 	else
 		SpectateController.Stop()
-		UIManager.TweenPanelOut(TrollPanel, UDim2.new(1, 50, 0.5, -250))
+		local TrollMainFrame = TrollGui:WaitForChild("TrollMainFrame")
+		local SpectateFrame = TrollGui:WaitForChild("SpectateFrame")
+		UIManager.AnimateFrameOut(SpectateFrame)
+		UIManager.AnimateFrameOut(TrollMainFrame, function()
+			if not panelOpen then
+				TrollGui.Enabled = false
+			end
+		end)
+		
+		local MenuUtama = PlayerGui:WaitForChild("MenuUtama")
+		local JumpGui = PlayerGui:WaitForChild("JumpUpgradeGui")
+		UIManager.AnimateFrameIn(MenuUtama:WaitForChild("MainFrame"))
+		UIManager.AnimateFrameIn(JumpGui:WaitForChild("Frame"))
 	end
 end
 

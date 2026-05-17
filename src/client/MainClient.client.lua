@@ -1,6 +1,10 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Network = ReplicatedStorage:WaitForChild("Network")
 
+if not game:IsLoaded() then
+	game.Loaded:Wait()
+end
+
 -- Initialize UI First
 local UIManager = require(script.Parent:WaitForChild("Controllers"):WaitForChild("UIManager"))
 UIManager.CreateUI()

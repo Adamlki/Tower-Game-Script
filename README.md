@@ -78,26 +78,30 @@ Hierarki admin yang terintegrasi dengan DataStore.
 - **Owner:** Dapat menambahkan/menghapus admin lain langsung dari dalam game.
 - **Keuntungan Admin:** Bisa menggunakan semua troll secara gratis, jump upgrade maksimal, dan bebas biaya tools.
 
-### 6. 📱 Responsive UI (UIScale)
-Script dilengkapi dengan Auto-Scaling UI yang mendeteksi ukuran layar player (Mobile, Tablet, PC) dan menyesuaikan `UIScale` secara dinamis.
+### 6. 📱 Sistem UI Interaktif & Animasi
+- Seluruh tombol utama telah dilengkapi dengan efek *Hover* (membesar & miring), *Click*, serta feedback audio yang seragam.
+- Menggunakan animasi gaya *Pop-In* (memantul/membesar) dan *Fade-Out* untuk transisi buka-tutup menu agar terasa profesional dan modern.
+- Script secara otomatis mengatur fokus GUI (menyembunyikan HUD lain saat menu tertentu terbuka).
 
 ---
 
 ## 🖼️ Kebutuhan UI
 
-Kamu perlu membuat kerangka UI di `StarterGui > TowerGameGui` agar script berfungsi dengan baik. Berikut struktur elemen yang dibutuhkan:
+Sistem UI sekarang menggunakan GUI manual yang didesain langsung di Roblox Studio. Buatlah elemen-elemen berikut di dalam `StarterGui`:
 
-- `MainHUD` (Tombol Troll, Admin, Notifikasi)
-- `SpectateUI` (Nama target, tombol Prev/Next)
-- `TrollPanel` (List player dan list tombol troll)
-- `JumpPanel` (Panel upgrade jump)
-- `ToolsPanel` (Toko tools)
-- `CheckpointPopup` (Popup konfirmasi saat jatuh)
-- `GroupPopup`, `ClaimPopup`, `FavoritePopup`
-- `AdminPanel` (Input tambah/hapus admin)
-- `JumpscareFrame` (Frame layar penuh untuk troll Jumpscare)
+- **`MenuUtama`** (ScreenGui)
+  - `MainFrame` (berisi tombol navigasi seperti `TrollBtn` dan `Shopbtn`)
+- **`SelectTrollGui`** (ScreenGui - *Set `Enabled = false`*)
+  - `TrollMainFrame` (berisi folder `BtnFrame` untuk tombol-tombol Troll, dan `CloseBtn`)
+  - `SpectateFrame` (berisi `Frame` untuk `PrevBtn`, `NextBtn`, dan `PlayerNameLabel`)
+  - `ConfirmationFrame` (berisi `MainFrame` untuk `YesBtn`, `CloseBtn`, dan `TextLabel`)
+- **`JumpUpgradeGui`** (ScreenGui)
+  - `Frame` (berisi `UpgradeJumpBtn`, `ApplyBtn`, dan `TextBox` input manual)
+- **`NotifikasiFrame`** (ScreenGui)
+  - `MainFrame` (sebagai template *visible = false* untuk notifikasi sukses/error)
+- GUI bawaan script lainnya (`CheckpointPopup`, `AdminPanel`, `JumpscareGui`) menyesuaikan.
 
-Pastikan penamaan elemen sesuai dengan yang dipanggil di script Controller.
+> **⚠️ PENTING:** Pastikan properti **`ResetOnSpawn`** dimatikan (`false`) pada GUI utama seperti `MenuUtama`, `SelectTrollGui`, dan `JumpUpgradeGui`. Jika tidak dimatikan, efek animasi tombol dan fungsi klik akan rusak ketika pemain mati dan respawn!
 
 ---
 

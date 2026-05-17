@@ -9,10 +9,16 @@ local targetIndex = 1
 local connection = nil
 
 function SpectateController.Init()
-	local Gui = UIManager.GetGui()
-	local SpectateUI = Gui:WaitForChild("SpectateUI")
-	local PrevBtn = SpectateUI:WaitForChild("PrevBtn")
-	local NextBtn = SpectateUI:WaitForChild("NextBtn")
+	local PlayerGui = Players.LocalPlayer:WaitForChild("PlayerGui")
+	local TrollGui = PlayerGui:WaitForChild("SelectTrollGui")
+	local SpectateFrame = TrollGui:WaitForChild("SpectateFrame")
+	local InnerFrame = SpectateFrame:WaitForChild("Frame")
+	
+	local PrevBtn = InnerFrame:WaitForChild("PrevBtn")
+	local NextBtn = InnerFrame:WaitForChild("NextBtn")
+	
+	UIManager.ApplyButtonAnimation(PrevBtn)
+	UIManager.ApplyButtonAnimation(NextBtn)
 	
 	PrevBtn.MouseButton1Click:Connect(function()
 		SpectateController.ChangeTarget(-1)
@@ -25,8 +31,6 @@ end
 
 function SpectateController.Start()
 	spectating = true
-	local Gui = UIManager.GetGui()
-	UIManager.TweenPanelIn(Gui.SpectateUI, UDim2.new(0.5, -175, 1, -80))
 	SpectateController.ChangeTarget(0)
 	
 	connection = game:GetService("RunService").RenderStepped:Connect(function()
@@ -40,9 +44,8 @@ function SpectateController.Start()
 end
 
 function SpectateController.Stop()
+	spectating = true
 	spectating = false
-	local Gui = UIManager.GetGui()
-	UIManager.TweenPanelOut(Gui.SpectateUI, UDim2.new(0.5, -175, 1, 50))
 	
 	if connection then
 		connection:Disconnect()
@@ -67,8 +70,10 @@ function SpectateController.ChangeTarget(dir)
 	end
 	
 	local target = players[targetIndex]
-	local Gui = UIManager.GetGui()
-	Gui.SpectateUI.PlayerNameLabel.Text = target.Name
+	local PlayerGui = Players.LocalPlayer:WaitForChild("PlayerGui")
+	local TrollGui = PlayerGui:WaitForChild("SelectTrollGui")
+	local PlayerNameLabel = TrollGui:WaitForChild("SpectateFrame"):WaitForChild("Frame"):WaitForChild("PlayerNameLabel")
+	PlayerNameLabel.Text = target.DisplayName
 	
 	-- Update Troll UI target if open
 	local TrollController = require(script.Parent.TrollController)
