@@ -191,7 +191,7 @@ end
 
 function UIManager.CreateUI()
 	local Gui = Instance.new("ScreenGui")
-	Gui.Name = "NotificationGui"
+	Gui.Name = "CoreScriptGui" -- Ubah namanya jadi ini
 	Gui.ResetOnSpawn = false
 	Gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 	

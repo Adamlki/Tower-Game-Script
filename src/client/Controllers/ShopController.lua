@@ -144,6 +144,15 @@ function ShopController.Init(networkRemotes)
 							setButtonOwned(buyBtn)
 						end
 					end
+					
+					-- 1. Memunculkan notifikasi berhasil membeli (mengambil nama asli coil/pedang dari Config)
+					local toolName = Config.Tools[itemName] or "Item"
+					UIManager.ShowNotification("Berhasil membeli " .. toolName .. "!", false)
+					
+					-- 2. Otomatis menutup shopframe setiap kali berhasil membeli
+					if shopOpen then
+						toggleShop()
+					end
 				end
 			end
 		end

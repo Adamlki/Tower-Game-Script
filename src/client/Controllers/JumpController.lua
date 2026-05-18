@@ -33,7 +33,7 @@ function JumpController.Init(networkRemotes)
 		maxJumps = level
 		currentJumps = level
 		JumpController.UpdateUI()
-		ShowNotification("Upgrade Berhasil!", false)
+		ShowNotification("Berhasil upgrade jump " .. level .. "x!", false) -- Teks diubah
 		return true
 	end
 	
@@ -74,9 +74,9 @@ function JumpController.Init(networkRemotes)
 		if input and input >= 1 and input <= maxJumps then
 			currentJumps = input
 			Remotes.SetCurrentJump:FireServer(currentJumps) -- If server needs to know
-			ShowNotification("Apply Berhasil!", false)
+			ShowNotification("Berhasil set jump " .. currentJumps .. "x!", false) -- Teks diubah
 		else
-			ShowNotification("Max Jump kamu cuma " .. maxJumps .. "!", true)
+			ShowNotification("Gagal, Max Jump kamu cuma " .. maxJumps .. "!", true) -- Teks diubah
 			JumpInput.Text = tostring(currentJumps)
 		end
 	end)
