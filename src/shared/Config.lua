@@ -27,7 +27,17 @@ Config.Products = {
 	PentaJump = 200005,
 	
 	-- Checkpoint
-	SkipCheckpoint = 300001
+	SkipCheckpoint = 300001,
+	SkipNextStage = 300002, -- Placeholder
+	SkipToFinish = 300003 -- Placeholder
+}
+
+-- [[ GAMEPASS SETTINGS (Shop Items) ]]
+Config.ShopGamepasses = {
+	ItemSatu = 1111111, -- Placeholder
+	ItemDua = 2222222, -- Placeholder
+	ItemTiga = 3333333, -- Placeholder
+	ItemEmpat = 4444444 -- Placeholder
 }
 
 -- Mapping nama product ke ID
@@ -54,10 +64,10 @@ Config.JumpProducts = {
 -- [[ TOOLS SETTINGS ]]
 -- Daftar tools yang akan diberikan. (Script akan mencari nama tools ini di ReplicatedStorage atau ServerStorage nantinya jika dibuat sistem tools beneran)
 Config.Tools = {
-	Tool1 = "Speed Coil",
-	Tool2 = "Gravity Coil",
-	Tool3 = "Rainbow Coil",
-	Tool4 = "God Sword"
+	ItemSatu = "Speed Coil",
+	ItemDua = "Gravity Coil",
+	ItemTiga = "Rainbow Coil",
+	ItemEmpat = "God Sword"
 }
 
 return Config

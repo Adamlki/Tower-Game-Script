@@ -12,60 +12,8 @@ local jumpCount = 0
 local timeSinceLastGroundJump = 0
 local connection = nil
 
-local activeNotifications = {}
-
-
-
 local function ShowNotification(message, isError)
-	local PlayerGui = Players.LocalPlayer:WaitForChild("PlayerGui")
-	local JumpGui = PlayerGui:WaitForChild("JumpUpgradeGui")
-	local NotifFrame = JumpGui:WaitForChild("NotifikasiFrame")
-	local Template = NotifFrame:WaitForChild("MainFrame")
-	
-	local clone = Template:Clone()
-	clone.Name = "NotifClone"
-	local textLabel = clone:WaitForChild("TextLabel")
-	local gradient = clone:WaitForChild("UIGradient")
-	
-	textLabel.Text = message
-	
-	if isError then
-		-- Warna Merah
-		gradient.Color = ColorSequence.new{
-			ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 100, 100)),
-			ColorSequenceKeypoint.new(1, Color3.fromRGB(200, 50, 50))
-		}
-	else
-		-- Warna Hijau
-		gradient.Color = ColorSequence.new{
-			ColorSequenceKeypoint.new(0, Color3.fromRGB(100, 255, 100)),
-			ColorSequenceKeypoint.new(1, Color3.fromRGB(50, 200, 50))
-		}
-	end
-	
-	clone.Visible = true
-	clone.Parent = NotifFrame
-	
-	table.insert(activeNotifications, clone)
-	
-	-- Batasi maksimal 3 notifikasi
-	if #activeNotifications > 3 then
-		local oldest = table.remove(activeNotifications, 1)
-		if oldest and oldest.Parent then
-			oldest:Destroy()
-		end
-	end
-	
-	-- Hilangkan otomatis setelah 3 detik
-	task.delay(3, function()
-		if clone and clone.Parent then
-			local index = table.find(activeNotifications, clone)
-			if index then
-				table.remove(activeNotifications, index)
-			end
-			clone:Destroy()
-		end
-	end)
+	UIManager.ShowNotification(message, isError)
 end
 
 function JumpController.Init(networkRemotes)
@@ -102,6 +50,13 @@ function JumpController.Init(networkRemotes)
 	-- Apply Animations
 	UIManager.ApplyButtonAnimation(UpgradeJumpBtn)
 	UIManager.ApplyButtonAnimation(ApplyBtn)
+	
+	-- Shake Animation Logic
+	local ImageLabel = UpgradeJumpBtn:WaitForChild("ImageLabel")
+	local HargaUpgrade = UpgradeJumpBtn:WaitForChild("HargaUpgrade")
+	
+	UIManager.ApplyShakeEffect(ImageLabel)
+	UIManager.ApplyShakeEffect(HargaUpgrade)
 	
 	UpgradeJumpBtn.MouseButton1Click:Connect(function()
 		local nextLevel = maxJumps + 1
@@ -189,6 +144,7 @@ function JumpController.UpdateUI()
 	local UpgradeJumpBtn = FirstFrame:WaitForChild("UpgradeJumpBtn")
 	local HargaUpgrade = UpgradeJumpBtn:WaitForChild("HargaUpgrade")
 	local UpgreadeJumpText = UpgradeJumpBtn:WaitForChild("UpgradeJump")
+	local ImageLabel = UpgradeJumpBtn:WaitForChild("ImageLabel")
 	
 	InfoMaxJump.Text = "Max Jump: " .. maxJumps
 	JumpInput.Text = tostring(currentJumps)
@@ -201,9 +157,15 @@ function JumpController.UpdateUI()
 		UpgreadeJumpText.Text = "MAXED OUT"
 		HargaUpgrade.Text = "Max Level"
 		UpgradeJumpBtn.Interactable = false
+		
+		ImageLabel:SetAttribute("DisableShake", true)
+		HargaUpgrade:SetAttribute("DisableShake", true)
 	else
 		UpgreadeJumpText.Text = "UPGRADE JUMP X" .. nextLevel
 		UpgradeJumpBtn.Interactable = true
+		
+		ImageLabel:SetAttribute("DisableShake", false)
+		HargaUpgrade:SetAttribute("DisableShake", false)
 		
 		-- Fetch price dynamically using MarketplaceService
 		task.spawn(function()

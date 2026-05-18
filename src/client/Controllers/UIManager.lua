@@ -80,6 +80,50 @@ function UIManager.ApplyButtonAnimation(button)
 	end
 end
 
+function UIManager.ApplyShakeEffect(guiObj)
+	if not guiObj then return end
+	local TweenService = game:GetService("TweenService")
+	local originalRotation = guiObj.Rotation
+	
+	task.spawn(function()
+		while true do
+			if not guiObj or not guiObj.Parent then break end
+			
+			if guiObj:GetAttribute("DisableShake") then
+				guiObj.Rotation = originalRotation
+				task.wait(1)
+				continue
+			end
+			
+			-- 0.1 di sini adalah KECEPATAN getarnya. Semakin besar angkanya, semakin lambat. (Sebelumnya 0.05)
+			local tInfo = TweenInfo.new(0.1, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, 1, true)
+			
+			local t1 = TweenService:Create(guiObj, tInfo, {Rotation = originalRotation + 15})
+			t1:Play()
+			t1.Completed:Wait()
+			if not guiObj or not guiObj.Parent or guiObj:GetAttribute("DisableShake") then continue end
+			
+			local t2 = TweenService:Create(guiObj, tInfo, {Rotation = originalRotation - 15})
+			t2:Play()
+			t2.Completed:Wait()
+			if not guiObj or not guiObj.Parent or guiObj:GetAttribute("DisableShake") then continue end
+			
+			t1:Play()
+			t1.Completed:Wait()
+			if not guiObj or not guiObj.Parent or guiObj:GetAttribute("DisableShake") then continue end
+			
+			t2:Play()
+			t2.Completed:Wait()
+			
+			-- Wait 5 seconds, checking periodically if disabled
+			for i = 1, 10 do
+				if not guiObj or not guiObj.Parent or guiObj:GetAttribute("DisableShake") then break end
+				task.wait(0.5)
+			end
+		end
+	end)
+end
+
 function UIManager.AnimateFrameIn(frame)
 	if not frame then return end
 	frame.Visible = true
@@ -147,7 +191,7 @@ end
 
 function UIManager.CreateUI()
 	local Gui = Instance.new("ScreenGui")
-	Gui.Name = "TowerGameGui"
+	Gui.Name = "NotificationGui"
 	Gui.ResetOnSpawn = false
 	Gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 	
@@ -211,15 +255,7 @@ function UIManager.CreateUI()
 		return box
 	end
 	
-	-- MainHUD
-	local MainHUD = Instance.new("Frame")
-	MainHUD.Name = "MainHUD"
-	MainHUD.Size = UDim2.new(1, 0, 1, 0)
-	MainHUD.BackgroundTransparency = 1
-	MainHUD.Parent = Gui
-	MainHUD.Parent = Gui
-	
-	local AdminBtn = createButton("AdminBtn", "ADMIN PANEL", UDim2.new(0, 140, 0, 45), UDim2.new(0, 20, 0.5, 5), Color3.fromRGB(50, 200, 100), MainHUD)
+	local AdminBtn = createButton("AdminBtn", "ADMIN PANEL", UDim2.new(0, 140, 0, 45), UDim2.new(0, 20, 0.5, 5), Color3.fromRGB(50, 200, 100), Gui)
 	AdminBtn.Visible = false
 	
 	local CPNotif = Instance.new("TextLabel")
@@ -234,7 +270,7 @@ function UIManager.CreateUI()
 	CPNotif.Visible = false
 	makeRounded(CPNotif, 8)
 	makeShadow(CPNotif)
-	CPNotif.Parent = MainHUD
+	CPNotif.Parent = Gui
 
 	-- Checkpoint Popup
 	local CheckpointPopup = createPanel("CheckpointPopup", UDim2.new(0, 320, 0, 160), UDim2.new(0.5, -160, -0.5, 0), Gui)
@@ -343,6 +379,74 @@ function UIManager.CreatePlayerListButton(player, parent, clickCallback)
 	btn.MouseButton1Click:Connect(clickCallback)
 	btn.Parent = parent
 	return btn
+end 
+
+-- Shared active notification list
+local activeNotifications = {}
+
+-- isError = true → merah (korban troll / error)
+-- isError = false → hijau (berhasil troll / upgrade sukses)
+function UIManager.ShowNotification(message, isError)
+	local PlayerGui = Players.LocalPlayer:WaitForChild("PlayerGui")
+	local NotificationGui = PlayerGui:FindFirstChild("NotificationGui")
+	if not NotificationGui then return end
+	
+	local NotifikasiFrame = NotificationGui:FindFirstChild("NotifikasiFrame")
+	if not NotifikasiFrame then return end
+	
+	local Template = NotifikasiFrame:FindFirstChild("MainFrame")
+	if not Template then return end
+	
+	-- Clone template untuk setiap notifikasi
+	local clone = Template:Clone()
+	clone.Name = "NotifClone"
+	
+	local textLabel = clone:FindFirstChild("TextLabel")
+	local gradient = clone:FindFirstChild("UIGradient")
+	
+	if textLabel then
+		textLabel.Text = message
+	end
+	
+	if gradient then
+		if isError then
+			-- Merah: untuk korban troll / error
+			gradient.Color = ColorSequence.new{
+				ColorSequenceKeypoint.new(0, Color3.fromRGB(200, 50, 50)),
+				ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 100, 100))
+			}
+		else
+			-- Hijau: untuk berhasil troll / upgrade sukses
+			gradient.Color = ColorSequence.new{
+				ColorSequenceKeypoint.new(0, Color3.fromRGB(50, 180, 50)),
+				ColorSequenceKeypoint.new(1, Color3.fromRGB(100, 255, 100))
+			}
+		end
+	end
+	
+	clone.Visible = true
+	clone.Parent = NotifikasiFrame
+	
+	table.insert(activeNotifications, clone)
+	
+	-- Batasi maks 3 notifikasi sekaligus
+	if #activeNotifications > 3 then
+		local oldest = table.remove(activeNotifications, 1)
+		if oldest and oldest.Parent then
+			oldest:Destroy()
+		end
+	end
+	
+	-- Auto-hilang setelah 3 detik
+	task.delay(3, function()
+		if clone and clone.Parent then
+			local index = table.find(activeNotifications, clone)
+			if index then
+				table.remove(activeNotifications, index)
+			end
+			clone:Destroy()
+		end
+	end)
 end
 
 return UIManager

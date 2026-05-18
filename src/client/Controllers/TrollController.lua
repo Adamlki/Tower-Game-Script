@@ -27,6 +27,7 @@ function TrollController.Init(networkRemotes)
 	
 	UIManager.ApplyButtonAnimation(TrollBtn)
 	UIManager.ApplyButtonAnimation(CloseBtn)
+	UIManager.ApplyShakeEffect(TrollBtn:WaitForChild("ImageLabel"))
 	
 	TrollBtn.MouseButton1Click:Connect(function()
 		TrollController.TogglePanel()
@@ -90,7 +91,7 @@ function TrollController.Init(networkRemotes)
 	end)
 	
 	-- Handle Jumpscare & Earthquake effects
-	Remotes.TrollEffect.OnClientEvent:Connect(function(effectType)
+	Remotes.TrollEffect.OnClientEvent:Connect(function(effectType, msg, isError)
 		if effectType == "Jumpscare" then
 			local PlayerGui = Players.LocalPlayer:WaitForChild("PlayerGui")
 			local jsGui = PlayerGui:WaitForChild("JumpscareGui")
@@ -114,6 +115,9 @@ function TrollController.Init(networkRemotes)
 				end
 				cam.CFrame = cam.CFrame * CFrame.new(math.random(-10,10)/10, math.random(-10,10)/10, math.random(-10,10)/10)
 			end)
+		elseif effectType == "Notif" then
+			-- isError: true = merah (korban troll), false = hijau (berhasil troll)
+			UIManager.ShowNotification(msg or "Notifikasi", isError)
 		end
 	end)
 end
@@ -140,6 +144,16 @@ function TrollController.TogglePanel()
 		local JumpGui = PlayerGui:WaitForChild("JumpUpgradeGui")
 		UIManager.AnimateFrameOut(MenuUtama:WaitForChild("MainFrame"))
 		UIManager.AnimateFrameOut(JumpGui:WaitForChild("Frame"))
+		
+		local MenuKanan = PlayerGui:FindFirstChild("MenuKanan")
+		if MenuKanan then
+			UIManager.AnimateFrameOut(MenuKanan:FindFirstChild("MainFrame"))
+		end
+		
+		local HideGui = PlayerGui:FindFirstChild("HideGui")
+		if HideGui then
+			UIManager.AnimateFrameOut(HideGui:FindFirstChild("MainFrame"))
+		end
 	else
 		SpectateController.Stop()
 		local TrollMainFrame = TrollGui:WaitForChild("TrollMainFrame")
@@ -155,6 +169,16 @@ function TrollController.TogglePanel()
 		local JumpGui = PlayerGui:WaitForChild("JumpUpgradeGui")
 		UIManager.AnimateFrameIn(MenuUtama:WaitForChild("MainFrame"))
 		UIManager.AnimateFrameIn(JumpGui:WaitForChild("Frame"))
+		
+		local MenuKanan = PlayerGui:FindFirstChild("MenuKanan")
+		if MenuKanan then
+			UIManager.AnimateFrameIn(MenuKanan:FindFirstChild("MainFrame"))
+		end
+		
+		local HideGui = PlayerGui:FindFirstChild("HideGui")
+		if HideGui then
+			UIManager.AnimateFrameIn(HideGui:FindFirstChild("MainFrame"))
+		end
 	end
 end
 

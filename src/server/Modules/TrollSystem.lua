@@ -105,6 +105,31 @@ function TrollSystem.ApplyTroll(buyer, trollType, targetUserId)
 				end)
 			end
 		end
+		
+		if trollType ~= "Kick" then
+			pcall(function()
+				-- isError = true → warna merah untuk korban
+				Remotes.TrollEffect:FireClient(target, "Notif", "Anda di troll " .. trollType, true)
+			end)
+		end
+	end
+	
+	if buyer then
+		local targetNameText = ""
+		if trollType == "KillAll" or trollType == "SlowAll" then
+			targetNameText = "semua orang"
+		else
+			local names = {}
+			for _, t in ipairs(targets) do
+				table.insert(names, t.DisplayName)
+			end
+			targetNameText = table.concat(names, ", ")
+		end
+		
+		pcall(function()
+			-- isError = false → warna hijau untuk pembeli (berhasil troll)
+			Remotes.TrollEffect:FireClient(buyer, "Notif", "Anda berhasil mengetroll " .. targetNameText .. " menggunakan troll " .. trollType, false)
+		end)
 	end
 	
 	return true, "Troll applied"

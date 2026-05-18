@@ -9,8 +9,7 @@ function AdminUIController.Init(networkRemotes)
 		local isAdmin = Remotes.IsAdmin:InvokeServer()
 		if isAdmin then
 			local Gui = UIManager.GetGui()
-			local MainHUD = Gui:WaitForChild("MainHUD")
-			local AdminBtn = MainHUD:WaitForChild("AdminBtn")
+			local AdminBtn = Gui:WaitForChild("AdminBtn")
 			local AdminPanel = Gui:WaitForChild("AdminPanel")
 			
 			AdminBtn.Visible = true

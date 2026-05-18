@@ -50,6 +50,7 @@ local CheckpointSystem = require(Modules.CheckpointSystem)
 local TrollSystem = require(Modules.TrollSystem)
 local PurchaseSystem = require(Modules.PurchaseSystem)
 local LeaderstatSystem = require(Modules.LeaderstatSystem)
+local ShopSystem = require(Modules.ShopSystem)
 
 -- Initialize Systems
 AdminSystem.Init(Remotes)
@@ -61,5 +62,6 @@ PurchaseSystem.Init(Remotes, {
 	Checkpoint = CheckpointSystem
 })
 LeaderstatSystem.Init()
+ShopSystem.Init(Remotes)
 
 print("Server Systems Initialized")

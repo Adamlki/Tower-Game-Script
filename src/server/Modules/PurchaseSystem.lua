@@ -66,6 +66,10 @@ function PurchaseSystem.Init(Remotes, loadedSystems)
 		-- Checkpoint Products
 		if productId == Config.Products.SkipCheckpoint then
 			granted = Systems.Checkpoint.SkipCheckpoint(player)
+		elseif productId == Config.Products.SkipNextStage then
+			granted = Systems.Checkpoint.SkipNextStage(player)
+		elseif productId == Config.Products.SkipToFinish then
+			granted = Systems.Checkpoint.SkipToFinish(player)
 		end
 		
 		if granted then

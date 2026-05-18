@@ -17,6 +17,9 @@ local JumpController = require(Controllers:WaitForChild("JumpController"))
 local SpectateController = require(Controllers:WaitForChild("SpectateController"))
 local GroupController = require(Controllers:WaitForChild("GroupController"))
 local AdminUIController = require(Controllers:WaitForChild("AdminUIController"))
+local ShopController = require(Controllers:WaitForChild("ShopController"))
+local MenuKananController = require(Controllers:WaitForChild("MenuKananController"))
+local HideUIController = require(Controllers:WaitForChild("HideUIController"))
 
 -- Initialize Controllers
 TrollController.Init(Network)
@@ -25,5 +28,8 @@ JumpController.Init(Network)
 SpectateController.Init(Network)
 GroupController.Init(Network)
 AdminUIController.Init(Network)
+ShopController.Init(Network)
+MenuKananController.Init(Network)
+HideUIController.Init(Network)
 
 print("Client Systems Initialized")
