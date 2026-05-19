@@ -1,116 +1,170 @@
-# 🗼 Roblox Tower Game Framework
+# Tower Game — Roblox
 
-Sebuah framework / script open-source untuk game tower di Roblox. Dilengkapi dengan berbagai sistem penting seperti Troll, Jump Upgrade, Custom Tools, Checkpoint, dan Admin Panel. Script ini didesain rapi dan modular menggunakan pola arsitektur yang mudah dipahami.
+Game tower climb sederhana tapi punya banyak sistem di baliknya. Dibuat pakai Rojo biar script-nya bisa di-manage langsung dari VSCode dan di-push ke GitHub, tanpa harus buka-tutup Roblox Studio terus.
 
 ---
 
-## 📁 Struktur Direktori
+## Tools yang Dipakai
 
-Pastikan kamu meletakkan script di tempat yang sesuai pada Roblox Studio:
+- **Rojo** — buat sync file Lua ke Roblox Studio
+- **Aftman** — package manager buat Rojo-nya
+- **Roblox Studio** — bikin map, GUI, dan Part-nya
+- **Git + GitHub** — version control
 
-```text
-ReplicatedStorage/
-└── Shared/
-    └── Config          ← ModuleScript
+---
 
-ServerScriptService/
-├── MainServer          ← Script
-└── Modules/
-    ├── AdminSystem     ← ModuleScript
-    ├── PurchaseSystem  ← ModuleScript
-    ├── TrollSystem     ← ModuleScript
-    └── CheckpointSystem← ModuleScript
+## Struktur Project
 
-StarterPlayerScripts/
-├── MainClient          ← LocalScript
-└── Controllers/
-    ├── SpectateController   ← ModuleScript
-    ├── TrollController      ← ModuleScript
-    ├── JumpController       ← ModuleScript
-    ├── CheckpointController ← ModuleScript
-    ├── GroupController      ← ModuleScript
-    └── AdminUIController    ← ModuleScript
+```
+src/
+├── client/
+│   ├── MainClient.client.lua 
+│   └── Controllers/
+│       ├── UIManager.lua       
+│       ├── CheckpointController.lua
+│       ├── JumpController.lua
+│       ├── TrollController.lua
+│       ├── SpectateController.lua
+│       ├── ShopController.lua
+│       ├── WinnerController.lua
+│       ├── AdminUIController.lua
+│       ├── MenuKananController.lua
+│       ├── HideUIController.lua
+│       ├── UfoController.lua
+│       └── GroupController.lua
+│
+├── server/
+│   ├── MainServer.server.lua  
+│   └── Modules/
+│       ├── AdminSystem.lua
+│       ├── CheckpointSystem.lua
+│       ├── DataSystem.lua
+│       ├── LeaderstatSystem.lua
+│       ├── PurchaseSystem.lua
+│       ├── ShopSystem.lua
+│       └── TrollSystem.lua
+│
+└── shared/
+    └── Config.lua              
 ```
 
-*(Catatan: UI menggunakan ScreenGui biasa, script `MainClient` akan mengatur scaling secara otomatis).*
+---
+
+## Sistem yang Sudah Ada
+
+### Checkpoint System
+Player bisa menyentuh Part bernama `CP1`, `CP2`, dst. untuk menyimpan progress. Kalau jatuh, otomatis respawn di checkpoint terakhir. Ada beberapa opsi:
+- **Skip Checkpoint** — langsung teleport ke checkpoint yang sudah dicapai (bayar Robux)
+- **Skip Next Stage** — loncat ke checkpoint berikutnya
+- **Skip to Finish** — langsung ke FinishPart
+
+Kalau player pilih "Cancel" waktu mau respawn otomatis, checkpoint-nya diturunkan satu level dan ada timer 30 detik sebelum reset paksa.
+
+Di sisi client, ada panah 3D (`panah` dari ReplicatedStorage) yang berputar dan naik-turun, ngarah ke checkpoint berikutnya. Checkpoint yang sudah diinjak warnanya berubah jadi hijau pakai TweenService.
 
 ---
 
-## ⚙️ Konfigurasi (`Config.lua`)
+### Jump System
+Player bisa upgrade kemampuan loncat dari 1x sampai maksimal 5x (Penta Jump) lewat Developer Product. Level jump disimpan di DataStore (`JumpLevel_v1`) jadi persistent.
 
-Semua pengaturan utama ada di `ReplicatedStorage > Shared > Config`. Sesuaikan variabel berikut dengan game-mu:
+Cara kerjanya pakai `AssemblyLinearVelocity` di HumanoidRootPart biar loncatannya berasa fisik dan nggak nge-bug. Ada cooldown kecil supaya jump ke-2 nggak langsung kepake pas baru angkat dari tanah.
 
-- `Config.OwnerId`: Masukkan UserId kamu untuk akses penuh ke admin.
-- `Config.GroupId`: ID Roblox Group kamu (untuk fitur popup group reward).
-- `Config.MapPlaceId`: Place ID game-mu (untuk fitur favorite).
-- `Config.Products`: Kumpulan Product ID dari Developer Products yang sudah kamu buat (untuk fitur berbayar seperti Troll, Jump, dll).
-
-**Tips:** Buat Developer Products di Creator Dashboard terlebih dahulu, lalu salin ID-nya ke bagian `Config.Products`.
+Di GUI ada tombol untuk upgrade ke level berikutnya, harganya diambil otomatis dari MarketplaceService. Kalau sudah max level, tombol-nya disable dan tulisannya ganti jadi "MAXED OUT".
 
 ---
 
-## 🎮 Fitur Utama
+### Troll System
+Admin atau player yang beli Developer Product bisa nge-troll player lain. Troll yang tersedia:
 
-### 1. 🎭 Troll System
-Player bisa melakukan troll ke player lain dengan membeli Developer Products. 
-- **Spectate Mode:** Saat memilih target, player akan masuk ke mode spectate.
-- **Macam-macam Troll:** Kill, Fling, Kick, Slow, Earthquake, Jumpscare, Freeze, Set Fire, Kill All, dan Slow All.
+| Troll | Efek |
+|---|---|
+| Kill | Langsung matiin karakter target |
+| Fling | Lempar karakter ke arah random dengan kecepatan tinggi |
+| Kick | Kick dari server |
+| Slow | WalkSpeed jadi 5 selama 10 detik |
+| Earthquake | Guncang kamera target selama 10 detik |
+| Jumpscare | Tampilkan JumpscareGui di layar target |
+| Freeze | Anchor HumanoidRootPart selama 15 detik |
+| SetFire | Pasang efek api, damage 15 HP per detik selama 10 detik |
+| KillAll | Kill semua player kecuali pembeli |
+| SlowAll | Slow semua player kecuali pembeli |
 
-### 2. 🦘 Jump Upgrade System
-Player bisa membeli upgrade double jump hingga penta jump (5x loncat).
-- Ada fitur input manual di mana player bisa menyesuaikan jumlah jump yang sedang aktif (misalnya punya max 5, tapi hanya mau pakai 3).
-
-### 3. 🛒 Tools Shop
-Sistem toko in-game untuk membeli perlengkapan:
-- Speed Coil
-- Gravity Coil
-- Rainbow Coil
-- God Sword
-
-### 4. 🏁 Checkpoint System
-Sistem checkpoint otomatis berbasis part di Workspace.
-- Buat folder bernama `Checkpoints` di Workspace.
-- Isi dengan part bernama `Checkpoint1`, `Checkpoint2`, dst.
-- Jika player jatuh (sumbu Y < -50), akan muncul popup untuk respawn gratis (dengan delay), atau bayar Robux untuk skip delay, atau kembali ke checkpoint sebelumnya.
-
-### 5. 👑 Admin System
-Hierarki admin yang terintegrasi dengan DataStore.
-- **Owner:** Dapat menambahkan/menghapus admin lain langsung dari dalam game.
-- **Keuntungan Admin:** Bisa menggunakan semua troll secara gratis, jump upgrade maksimal, dan bebas biaya tools.
-
-### 6. 📱 Sistem UI Interaktif & Animasi
-- Seluruh tombol utama telah dilengkapi dengan efek *Hover* (membesar & miring), *Click*, serta feedback audio yang seragam.
-- Menggunakan animasi gaya *Pop-In* (memantul/membesar) dan *Fade-Out* untuk transisi buka-tutup menu agar terasa profesional dan modern.
-- Script secara otomatis mengatur fokus GUI (menyembunyikan HUD lain saat menu tertentu terbuka).
+Sebelum eksekusi muncul ConfirmationFrame dulu biar nggak salah pencet. Ada notifikasi warna **hijau** kalau berhasil troll, dan **merah** buat player yang kena.
 
 ---
 
-## 🖼️ Kebutuhan UI
+### Admin System
+List admin disimpan di DataStore (`AdminList_v1`). Owner (berdasarkan `OwnerId` di Config) otomatis dapet akses admin dan nggak bisa dihapus dari list.
 
-Sistem UI sekarang menggunakan GUI manual yang didesain langsung di Roblox Studio. Buatlah elemen-elemen berikut di dalam `StarterGui`:
-
-- **`MenuUtama`** (ScreenGui)
-  - `MainFrame` (berisi tombol navigasi seperti `TrollBtn` dan `Shopbtn`)
-- **`SelectTrollGui`** (ScreenGui - *Set `Enabled = false`*)
-  - `TrollMainFrame` (berisi folder `BtnFrame` untuk tombol-tombol Troll, dan `CloseBtn`)
-  - `SpectateFrame` (berisi `Frame` untuk `PrevBtn`, `NextBtn`, dan `PlayerNameLabel`)
-  - `ConfirmationFrame` (berisi `MainFrame` untuk `YesBtn`, `CloseBtn`, dan `TextLabel`)
-- **`JumpUpgradeGui`** (ScreenGui)
-  - `Frame` (berisi `UpgradeJumpBtn`, `ApplyBtn`, dan `TextBox` input manual)
-- **`NotifikasiFrame`** (ScreenGui)
-  - `MainFrame` (sebagai template *visible = false* untuk notifikasi sukses/error)
-- GUI bawaan script lainnya (`CheckpointPopup`, `AdminPanel`, `JumpscareGui`) menyesuaikan.
-
-> **⚠️ PENTING:** Pastikan properti **`ResetOnSpawn`** dimatikan (`false`) pada GUI utama seperti `MenuUtama`, `SelectTrollGui`, dan `JumpUpgradeGui`. Jika tidak dimatikan, efek animasi tombol dan fungsi klik akan rusak ketika pemain mati dan respawn!
+Admin dapat:
+- Semua troll gratis (nggak perlu beli Developer Product)
+- Jump langsung max level (5x)
+- Skip checkpoint gratis
+- Akses Admin UI panel
 
 ---
 
-## 🔧 Troubleshooting Singkat
+### Data & Leaderboard
+Data win player disimpan di dua tempat:
+- `PlayerWinsData_v1` — untuk load/save personal
+- `GlobalWinsLeaderboard_v1` — OrderedDataStore untuk papan ranking
 
-- **Troll/Pembelian tidak jalan?** Pastikan `Config.Products` sudah terisi dengan Product ID yang valid dan game sudah di-publish ke Roblox.
-- **Checkpoint tidak respon?** Pastikan huruf "C" besar pada folder `Checkpoints` dan nama part sudah sesuai format `Checkpoint[angka]`.
-- **Fitur admin terkunci untuk Owner?** Cek apakah `Config.OwnerId` sudah sama dengan UserId profil Roblox kamu.
+Leaderboard di Workspace (`WinnerLeaderboard > Papan > SurfaceGui`) diupdate otomatis setiap 30 detik. Menampilkan top 50 player beserta foto profil dan total win-nya.
+
+Nama dan foto profil di-cache di memori server supaya nggak spam API call tiap kali refresh.
 
 ---
 
-*Open Source - Silakan dimodifikasi sesuai kebutuhan proyek game-mu!*
+### Shop System
+Player bisa beli Gamepass untuk dapat Tools (Speed Coil, Gravity Coil, dll.). Tool diberikan ke Backpack dan StarterGear supaya tetap ada setelah respawn. Admin otomatis dapat semua item tanpa perlu beli.
+
+---
+
+### UI System (UIManager)
+Semua animasi UI dipusatkan di `UIManager.lua`:
+- `AnimateFrameIn` / `AnimateFrameOut` — slide animasi masuk/keluar frame
+- `ApplyButtonAnimation` — hover scale effect di semua tombol
+- `ApplyShakeEffect` — efek getar loop untuk elemen tertentu
+- `ShowNotification` — notifikasi popup yang muncul di layar, bisa hijau (sukses) atau merah (error)
+
+---
+
+### Winner GUI
+Ada GUI kecil yang menampilkan total win player saat ini. Setiap kali win bertambah, ada animasi "pop" di text-nya. Kalau panel Troll dibuka, GUI ini disembunyikan dulu dan muncul lagi waktu panel ditutup.
+
+---
+
+## Setup Awal
+
+1. Install [Aftman](https://github.com/LPGhatguy/aftman) lalu jalankan:
+   ```
+   aftman install
+   ```
+2. Jalankan Rojo server:
+   ```
+   rojo serve
+   ```
+3. Di Roblox Studio, connect ke Rojo server lewat plugin Rojo.
+4. Isi semua ID di `src/shared/Config.lua`:
+   - `OwnerId` — UserId kamu
+   - `GroupId` — ID grup
+   - `Products.*` — ID Developer Product dari Creator Dashboard
+   - `ShopGamepasses.*` — ID Gamepass
+
+5. Buat Part-part berikut di Workspace Studio:
+   - Folder `Checkpoints` berisi `CP1`, `CP2`, ..., `FinishPart`, `ResetPart`
+   - Model `WinnerLeaderboard` berisi `Papan > SurfaceGui > Frame > MainFrame`
+   - Object `panah` di ReplicatedStorage (Union 3D panah arah)
+
+6. Buat GUI di StarterGui:
+   - `MenuUtama`, `SelectTrollGui`, `JumpUpgradeGui`
+   - `NotificationGui`, `WinnerGui`, `JumpscareGui`, `HideGui`
+   - Dan GUI lainnya sesuai kebutuhan controller
+
+---
+
+## Catatan
+
+- Semua ID di `Config.lua` masih placeholder, harus diganti dengan ID yang valid sebelum publish.
+- `FilteringEnabled` aktif, jadi semua validasi penting ada di server.
+- Script bisa berkembang — sistem ini dibuat modular supaya gampang nambah fitur baru tanpa harus ubah banyak file.
