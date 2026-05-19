@@ -130,65 +130,25 @@ function TrollController.TogglePanel()
 	local PlayerGui = Players.LocalPlayer:WaitForChild("PlayerGui")
 	local TrollGui = PlayerGui:WaitForChild("SelectTrollGui")
 	
-	-- Ambil WinnerGui MainFrame
-	local WinnerGui = PlayerGui:FindFirstChild("WinnerGui")
-	local WinnerFrame = WinnerGui and WinnerGui:FindFirstChild("MainFrame")
-	
 	panelOpen = not panelOpen
 	
 	if panelOpen then
 		SpectateController.Start()
 		TrollGui.Enabled = true
-		local TrollMainFrame = TrollGui:WaitForChild("TrollMainFrame")
-		local SpectateFrame = TrollGui:WaitForChild("SpectateFrame")
-		UIManager.AnimateFrameIn(TrollMainFrame)
-		UIManager.AnimateFrameIn(SpectateFrame)
+		UIManager.AnimateFrameIn(TrollGui:WaitForChild("TrollMainFrame"))
+		UIManager.AnimateFrameIn(TrollGui:WaitForChild("SpectateFrame"))
 		
-		local MenuUtama = PlayerGui:WaitForChild("MenuUtama")
-		local JumpGui = PlayerGui:WaitForChild("JumpUpgradeGui")
-		UIManager.AnimateFrameOut(MenuUtama:WaitForChild("MainFrame"))
-		UIManager.AnimateFrameOut(JumpGui:WaitForChild("Frame"))
-		
-		-- [BARU]: Sembunyikan WinnerGui saat panel Troll buka
-		if WinnerFrame then UIManager.AnimateFrameOut(WinnerFrame) end
-		
-		local MenuKanan = PlayerGui:FindFirstChild("MenuKanan")
-		if MenuKanan then
-			UIManager.AnimateFrameOut(MenuKanan:FindFirstChild("MainFrame"))
-		end
-		
-		local HideGui = PlayerGui:FindFirstChild("HideGui")
-		if HideGui then
-			UIManager.AnimateFrameOut(HideGui:FindFirstChild("MainFrame"))
-		end
+		-- [[ CUKUP 1 BARIS INI UNTUK SEMBUNYIKAN SEMUA HUD LAIN ]]
+		UIManager.HideAllGameplayHUD(PlayerGui)
 	else
 		SpectateController.Stop()
-		local TrollMainFrame = TrollGui:WaitForChild("TrollMainFrame")
-		local SpectateFrame = TrollGui:WaitForChild("SpectateFrame")
-		UIManager.AnimateFrameOut(SpectateFrame)
-		UIManager.AnimateFrameOut(TrollMainFrame, function()
-			if not panelOpen then
-				TrollGui.Enabled = false
-			end
+		UIManager.AnimateFrameOut(TrollGui:WaitForChild("SpectateFrame"))
+		UIManager.AnimateFrameOut(TrollGui:WaitForChild("TrollMainFrame"), function()
+			if not panelOpen then TrollGui.Enabled = false end
 		end)
 		
-		local MenuUtama = PlayerGui:WaitForChild("MenuUtama")
-		local JumpGui = PlayerGui:WaitForChild("JumpUpgradeGui")
-		UIManager.AnimateFrameIn(MenuUtama:WaitForChild("MainFrame"))
-		UIManager.AnimateFrameIn(JumpGui:WaitForChild("Frame"))
-		
-		-- [BARU]: Munculkan kembali WinnerGui saat panel Troll tutup
-		if WinnerFrame then UIManager.AnimateFrameIn(WinnerFrame) end
-		
-		local MenuKanan = PlayerGui:FindFirstChild("MenuKanan")
-		if MenuKanan then
-			UIManager.AnimateFrameIn(MenuKanan:FindFirstChild("MainFrame"))
-		end
-		
-		local HideGui = PlayerGui:FindFirstChild("HideGui")
-		if HideGui then
-			UIManager.AnimateFrameIn(HideGui:FindFirstChild("MainFrame"))
-		end
+		-- [[ CUKUP 1 BARIS INI UNTUK MUNCULKAN KEMBALI SEMUA HUD LAIN ]]
+		UIManager.ShowAllGameplayHUD(PlayerGui)
 	end
 end
 

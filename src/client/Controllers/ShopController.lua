@@ -44,61 +44,21 @@ function ShopController.Init(networkRemotes)
 	local function toggleShop()
 		shopOpen = not shopOpen
 		
-		-- Ambil WinnerGui MainFrame
-		local WinnerGui = PlayerGui:FindFirstChild("WinnerGui")
-		local WinnerFrame = WinnerGui and WinnerGui:FindFirstChild("MainFrame")
-		
 		if shopOpen then
-			-- Show Shop
 			ShopFrame.Visible = true
 			UIManager.AnimateFrameIn(ShopMainFrame)
 			UIManager.AnimateFrameIn(ShopTitleFrame)
 			
-			-- Hide other UIs
-			UIManager.AnimateFrameOut(MainFrame)
-			
-			-- [BARU]: Sembunyikan WinnerGui saat toko buka
-			if WinnerFrame then UIManager.AnimateFrameOut(WinnerFrame) end
-			
-			local MenuKanan = PlayerGui:FindFirstChild("MenuKanan")
-			if MenuKanan then
-				UIManager.AnimateFrameOut(MenuKanan:FindFirstChild("MainFrame"))
-			end
-			local JumpGui = PlayerGui:FindFirstChild("JumpUpgradeGui")
-			if JumpGui then
-				UIManager.AnimateFrameOut(JumpGui:FindFirstChild("Frame"))
-			end
-			local HideGui = PlayerGui:FindFirstChild("HideGui")
-			if HideGui then
-				UIManager.AnimateFrameOut(HideGui:FindFirstChild("MainFrame"))
-			end
+			-- [[ BERSIH: Otomatis menyembunyikan HUD lain ]]
+			UIManager.HideAllGameplayHUD(PlayerGui)
 		else
-			-- Hide Shop
 			UIManager.AnimateFrameOut(ShopTitleFrame)
 			UIManager.AnimateFrameOut(ShopMainFrame, function()
-				if not shopOpen then
-					ShopFrame.Visible = false
-				end
+				if not shopOpen then ShopFrame.Visible = false end
 			end)
 			
-			-- Show other UIs
-			UIManager.AnimateFrameIn(MainFrame)
-			
-			-- [BARU]: Munculkan kembali WinnerGui saat toko tutup
-			if WinnerFrame then UIManager.AnimateFrameIn(WinnerFrame) end
-			
-			local MenuKanan = PlayerGui:FindFirstChild("MenuKanan")
-			if MenuKanan then
-				UIManager.AnimateFrameIn(MenuKanan:FindFirstChild("MainFrame"))
-			end
-			local JumpGui = PlayerGui:FindFirstChild("JumpUpgradeGui")
-			if JumpGui then
-				UIManager.AnimateFrameIn(JumpGui:FindFirstChild("Frame"))
-			end
-			local HideGui = PlayerGui:FindFirstChild("HideGui")
-			if HideGui then
-				UIManager.AnimateFrameIn(HideGui:FindFirstChild("MainFrame"))
-			end
+			-- [[ BERSIH: Otomatis memunculkan kembali HUD lain ]]
+			UIManager.ShowAllGameplayHUD(PlayerGui)
 		end
 	end
 	

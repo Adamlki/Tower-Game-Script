@@ -42,9 +42,10 @@ local Remotes = {
 	-- UI Trigger Remotes
 	ShowPopup = CreateRemote("RemoteEvent", "ShowPopup"),
 	ClaimGroupReward = CreateRemote("RemoteFunction", "ClaimGroupReward"),
+	ExecuteSkip = CreateRemote("RemoteFunction", "ExecuteSkip"),
 	
-	-- [BARU] TAMBAHKAN BARIS INI UNTUK MEMPERBAIKI CRASH:
-	ExecuteSkip = CreateRemote("RemoteFunction", "ExecuteSkip")
+	-- [[ BARU ]: Daftarkan CheckItemOwnership di sini secara terpusat ]]
+	CheckItemOwnership = CreateRemote("RemoteFunction", "CheckItemOwnership")
 }
 
 -- Load Systems

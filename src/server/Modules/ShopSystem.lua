@@ -7,6 +7,7 @@ local AdminSystem = require(script.Parent:WaitForChild("AdminSystem"))
 
 local ShopSystem = {}
 
+-- Fungsi internal untuk memberikan item/tool ke player
 local function GiveToolToPlayer(player, toolName)
 	local toolsFolder = ServerStorage:FindFirstChild("Tools")
 	if not toolsFolder then
@@ -20,15 +21,15 @@ local function GiveToolToPlayer(player, toolName)
 		return
 	end
 	
-	-- Check if player already has it
+	-- Cek apakah player sudah punya item tersebut di backpack atau karakter
 	if player.Backpack:FindFirstChild(toolName) or (player.Character and player.Character:FindFirstChild(toolName)) then
-		return -- Already has it
+		return 
 	end
 	
 	local clone1 = toolPrefab:Clone()
 	clone1.Parent = player.Backpack
 	
-	-- Add to StarterGear so it persists on respawn
+	-- Masukkan ke StarterGear agar item tidak hilang saat player mati/respawn
 	local starterGear = player:FindFirstChild("StarterGear")
 	if starterGear and not starterGear:FindFirstChild(toolName) then
 		local clone2 = toolPrefab:Clone()
@@ -37,8 +38,8 @@ local function GiveToolToPlayer(player, toolName)
 end
 
 function ShopSystem.Init(Remotes)
+	-- Cek kepemilikan Gamepass saat player baru masuk server
 	Players.PlayerAdded:Connect(function(player)
-		-- Wait a bit for data to load if needed, but GamePass check is generally fast
 		local isAdmin = AdminSystem.IsAdmin(player.UserId)
 		
 		for itemKey, gamepassId in pairs(Config.ShopGamepasses) do
@@ -62,6 +63,7 @@ function ShopSystem.Init(Remotes)
 		end
 	end)
 	
+	-- Berikan item secara instan ketika proses pembelian Gamepass selesai
 	MarketplaceService.PromptGamePassPurchaseFinished:Connect(function(player, gamepassId, wasPurchased)
 		if wasPurchased then
 			for itemKey, id in pairs(Config.ShopGamepasses) do
@@ -75,11 +77,9 @@ function ShopSystem.Init(Remotes)
 		end
 	end)
 	
-	-- Remote Function to check if player owns a specific item (used by client to update UI)
-	Remotes.CheckItemOwnership = Instance.new("RemoteFunction")
-	Remotes.CheckItemOwnership.Name = "CheckItemOwnership"
-	Remotes.CheckItemOwnership.Parent = game:GetService("ReplicatedStorage").Network
-	
+	-- [[ BERSIH & RAPI ]]: 
+	-- Kita tidak membuat Instance baru di sini lagi. Baris pembuatannya sudah dipindah ke MainServer.lua.
+	-- Di sini kita tinggal memasang fungsi utamanya saja untuk merespon Client.
 	Remotes.CheckItemOwnership.OnServerInvoke = function(player, itemKey)
 		if AdminSystem.IsAdmin(player.UserId) then return true end
 		

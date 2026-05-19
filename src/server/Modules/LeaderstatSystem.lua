@@ -1,12 +1,13 @@
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
+local UserService = game:GetService("UserService") -- [BARU]: Layanan untuk mengambil Nickname/DisplayName
 
 local LeaderstatSystem = {}
 local CheckpointSystem = require(script.Parent.CheckpointSystem)
 local DataSystem = require(script.Parent.DataSystem)
 local debounces = {}
 
--- [OPTIMASI SERVER]: Cache memori untuk menyimpan Nama dan Foto Profil agar tidak lag
+-- Cache memori untuk menyimpan Nickname dan Foto Profil agar tidak lag
 local UserInfoCache = {}
 
 -- [[ FUNGSI UPDATE PAPAN LEADERBOARD GLOBAL ]]
@@ -25,7 +26,7 @@ local function updateGlobalLeaderboard()
 	
 	local template = frame:FindFirstChild("MainFrame")
 	if not template then return end
-	template.Visible = false -- Skrip otomatis menyembunyikan template asli milikmu
+	template.Visible = false 
 	
 	-- Ambil data top 50 langsung dari DataStore
 	local pages = DataSystem.GetTopWins(50)
@@ -46,28 +47,38 @@ local function updateGlobalLeaderboard()
 			local clone = template:Clone()
 			clone.Name = "Rank_" .. rank
 			clone.Visible = true
-			
-			-- [PENTING]: Set LayoutOrder sesuai ranking agar terurut benar di UIListLayout
 			clone.LayoutOrder = rank 
 			
-			-- [OPTIMASI API]: Cek apakah data nama & foto player sudah ada di memori server
+			-- [OPTIMASI API & NICKNAME]: Cek apakah data nickname & foto sudah ada di memori cache
 			if not UserInfoCache[userId] then
-				local username = "Unknown Player"
+				local nickname = "Unknown Player"
 				local thumbUrl = "rbxassetid://0"
 				
-				-- Jika belum ada, download dari Roblox (hanya dilakukan sekali per pemain baru)
+				-- Ambil Nickname (DisplayName) dan Foto secara aman dari database Roblox
 				pcall(function()
-					username = Players:GetNameFromUserIdAsync(userId)
+					-- Mengambil informasi user lengkap (termasuk DisplayName)
+					local success, userInfo = pcall(function()
+						return UserService:GetUserInfosByUserIdsAsync({userId})
+					end)
+					
+					if success and userInfo and userInfo[1] then
+						nickname = userInfo[1].DisplayName -- Mengambil NICKNAME, bukan Username asli!
+					else
+						-- Fallback jika UserService gagal, coba ambil username biasa sebagai cadangan
+						nickname = Players:GetNameFromUserIdAsync(userId)
+					end
+					
 					thumbUrl = Players:GetUserThumbnailAsync(userId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size420x420)
 				end)
 				
+				-- Simpan ke memori sementara server
 				UserInfoCache[userId] = {
-					Name = username,
+					Name = nickname,
 					Image = thumbUrl
 				}
 			end
 			
-			-- Ambil data dari Cache agar instan
+			-- Ambil data dari Cache agar instan tanpa beban server
 			local cachedData = UserInfoCache[userId]
 			
 			if clone:FindFirstChild("NameFrame") and clone.NameFrame:FindFirstChild("TextLabel") then
@@ -75,7 +86,7 @@ local function updateGlobalLeaderboard()
 			end
 			
 			if clone:FindFirstChild("WinnerFrame") and clone.WinnerFrame:FindFirstChild("TextLabel") then
-				clone.WinnerFrame.TextLabel.Text = tostring(totalWins) .. " Wins"
+				clone.WinnerFrame.TextLabel.Text = tostring(totalWins) .. " 🏆"
 			end
 			
 			if clone:FindFirstChild("ImagePlayerFrame") and clone.ImagePlayerFrame:FindFirstChild("ImageLabel") then
@@ -124,7 +135,7 @@ function LeaderstatSystem.Init()
 		onPlayerAdded(player)
 	end
 	
-	-- [REFRESH RATE]: Update Papan Global setiap 30 Detik
+	-- Update Papan Global setiap 30 Detik
 	task.spawn(function()
 		while true do
 			updateGlobalLeaderboard()

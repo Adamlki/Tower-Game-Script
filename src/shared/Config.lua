@@ -5,10 +5,40 @@ Config.OwnerId = 8978185974 -- Ganti dengan UserId owner (kamu)
 Config.GroupId = 12345678 -- Ganti dengan GroupId komunitas
 Config.MapPlaceId = 12345678 -- Ganti dengan PlaceId game utama
 
+-- [[ CENTRALIZED ASSETS (SOUNDS & IMAGES) ]]
+Config.Assets = {
+	Sounds = {
+		UIHover = "rbxassetid://6895079853",
+		UIClick = "rbxassetid://6895079853",
+		CheckpointSaved = "rbxassetid://97969485348089",
+		TowerFinished = "rbxassetid://115051157912492",
+		Jumpscare = "rbxassetid://139162107746216"
+	},
+	Images = {
+		Jumpscare = "rbxthumb://type=Asset&id=1308665113&w=420&h=420"
+	}
+}
+
+-- [[ UFO SETTINGS ]]
+Config.UfoSettings = {
+	UFO1 = {
+		DropPosition = Vector3.new(-20.5, 62.5, 592),
+		LiftingTime = 2,
+		MovingTime = 3,
+		ReturnTime = 3,
+		AnimationId = "rbxassetid://112089880074848",
+	},
+	UFO2 = {
+		DropPosition = Vector3.new(-20.5, 62.5, 592),
+		LiftingTime = 2,
+		MovingTime = 3,
+		ReturnTime = 3,
+		AnimationId = "rbxassetid://112089880074848",
+	}
+}
+
 -- [[ DEVELOPER PRODUCTS (Troll, Jump, Checkpoint Skip) ]]
--- Ganti angka-angka ini dengan ID Developer Products yang valid di Creator Dashboard
 Config.Products = {
-	-- Trolls
 	Kill = 100001,
 	Fling = 100002,
 	Kick = 100003,
@@ -20,27 +50,24 @@ Config.Products = {
 	KillAll = 100009,
 	SlowAll = 100010,
 	
-	-- Jump Upgrades
 	DoubleJump = 200002,
 	TripleJump = 200003,
 	QuadJump = 200004,
 	PentaJump = 200005,
 	
-	-- Checkpoint
 	SkipCheckpoint = 300001,
-	SkipNextStage = 300002, -- Placeholder
-	SkipToFinish = 300003 -- Placeholder
+	SkipNextStage = 300002,
+	SkipToFinish = 300003 
 }
 
 -- [[ GAMEPASS SETTINGS (Shop Items) ]]
 Config.ShopGamepasses = {
-	ItemSatu = 1111111, -- Placeholder
-	ItemDua = 2222222, -- Placeholder
-	ItemTiga = 3333333, -- Placeholder
-	ItemEmpat = 4444444 -- Placeholder
+	ItemSatu = 1111111,
+	ItemDua = 2222222,
+	ItemTiga = 3333333,
+	ItemEmpat = 4444444
 }
 
--- Mapping nama product ke ID
 Config.TrollProducts = {
 	Kill = Config.Products.Kill,
 	Fling = Config.Products.Fling,
@@ -61,8 +88,6 @@ Config.JumpProducts = {
 	[5] = Config.Products.PentaJump
 }
 
--- [[ TOOLS SETTINGS ]]
--- Daftar tools yang akan diberikan. (Script akan mencari nama tools ini di ReplicatedStorage atau ServerStorage nantinya jika dibuat sistem tools beneran)
 Config.Tools = {
 	ItemSatu = "Speed Coil",
 	ItemDua = "Gravity Coil",

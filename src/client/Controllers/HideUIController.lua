@@ -18,7 +18,9 @@ function HideUIController.Init(networkRemotes)
 	local guisToToggle = {
 		"MenuUtama",
 		"MenuKanan",
-		"JumpUpgradeGui"
+		"JumpUpgradeGui",
+		"WinnerGui",
+		"NotificationGui"
 	}
 	
 	HideBtn.MouseButton1Click:Connect(function()
@@ -41,7 +43,7 @@ function HideUIController.Init(networkRemotes)
 			end
 		else
 			-- Show
-			TextLabel.Text = "HIDE GUI"
+			TextLabel.Text = "HIDE UI"
 			HideBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50) -- Red
 			
 			for _, guiName in ipairs(guisToToggle) do

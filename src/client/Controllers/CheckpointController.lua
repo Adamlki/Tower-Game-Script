@@ -4,6 +4,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 local SoundService = game:GetService("SoundService")
 local RunService = game:GetService("RunService")
+local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
 
 local CheckpointController = {}
 local Remotes = nil
@@ -11,21 +12,19 @@ local Remotes = nil
 local currentCheckpoint = nil
 local originalColors = {}
 
--- [[ SETUP VISUAL & AUDIO ]]
--- Efek Suara
+-- [[ AMBIL AUDIO DARI CONFIG ]]
 local CPSound = Instance.new("Sound")
 CPSound.Name = "CPSound"
-CPSound.SoundId = "rbxassetid://97969485348089" 
+CPSound.SoundId = Config.Assets.Sounds.CheckpointSaved
 CPSound.Volume = 0.8
 CPSound.Parent = SoundService
 
 local FinishSound = Instance.new("Sound")
 FinishSound.Name = "FinishSound"
-FinishSound.SoundId = "rbxassetid://115051157912492"
+FinishSound.SoundId = Config.Assets.Sounds.TowerFinished
 FinishSound.Volume = 1
 FinishSound.Parent = SoundService
 
--- Membuat Anchor (Part tak terlihat sebagai titik pusat pergerakan panah)
 local ArrowAnchor = Instance.new("Part")
 ArrowAnchor.Name = "ArrowAnchor"
 ArrowAnchor.Anchored = true
@@ -34,56 +33,41 @@ ArrowAnchor.Transparency = 1
 ArrowAnchor.Size = Vector3.new(1, 1, 1)
 ArrowAnchor.Parent = Workspace
 
--- Mengambil panah 3D (Union) milikmu dari ReplicatedStorage
 local PanahTemplate = ReplicatedStorage:WaitForChild("panah", 10)
 if not PanahTemplate then
-	warn("Model 'panah' tidak ditemukan di ReplicatedStorage! Pastikan namanya persis 'panah' huruf kecil semua.")
+	warn("Model 'panah' tidak ditemukan di ReplicatedStorage!")
 	return CheckpointController
 end
 
--- SIMPAN ROTASI ASLI DARI STUDIO
 local baseRotation = PanahTemplate.CFrame.Rotation 
 
 local ArrowPart = PanahTemplate:Clone()
 ArrowPart.Name = "ClientCheckpointArrow"
 ArrowPart.Anchored = true
 ArrowPart.CanCollide = false
-ArrowPart.Transparency = 1 -- Mulai dalam kondisi tidak terlihat (Fade Out)
+ArrowPart.Transparency = 1 
 ArrowPart.Parent = Workspace
 
--- Animasi Naik Turun (Bobbing) & Berputar (Spinning)
 local tickOffset = 0
-local spinSpeed = 3 -- Kecepatan putaran panah
+local spinSpeed = 3 
 
 RunService.RenderStepped:Connect(function(dt)
 	tickOffset = tickOffset + dt
-	local floatOffset = math.sin(tickOffset * 4) * 0.8 -- Kecepatan & tinggi naik-turun panah
-	
-	-- 1. Tentukan Posisi Baru
+	local floatOffset = math.sin(tickOffset * 4) * 0.8
 	local targetPosition = ArrowAnchor.Position + Vector3.new(0, 6 + floatOffset, 0)
-	
-	-- 2. Tentukan Putaran (Sumbu Y Dunia)
 	local spinCFrame = CFrame.Angles(0, tickOffset * spinSpeed, 0)
-	
-	-- 3. Gabungkan Posisi + Putaran Baru + ROTASI ASLI Panahmu
 	ArrowPart.CFrame = CFrame.new(targetPosition) * spinCFrame * baseRotation
 end)
 
--- [[ FUNGSI HELPER PENGGERAK PANAH ]]
 local moveTween = nil
 local function moveArrowTo(targetPart)
 	if not targetPart then
-		-- Fade out panah (Hilang perlahan) jika mencapai Finish
 		TweenService:Create(ArrowPart, TweenInfo.new(0.5), {Transparency = 1}):Play()
 		return
 	end
-	
-	-- Fade in (Muncul perlahan) jika sebelumnya tidak kelihatan
 	if ArrowPart.Transparency > 0.5 then
 		TweenService:Create(ArrowPart, TweenInfo.new(0.5), {Transparency = 0}):Play()
 	end
-	
-	-- Animasi Geser Anchor ke CP Berikutnya (yang membuat panahnya ikut bergeser)
 	if moveTween then moveTween:Cancel() end
 	moveTween = TweenService:Create(ArrowAnchor, TweenInfo.new(0.8, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = targetPart.Position})
 	moveTween:Play()
@@ -100,17 +84,13 @@ local function getNextCP(currentName)
 	return nil
 end
 
-
--- [[ FUNGSI UTAMA ]]
 function CheckpointController.Init(networkRemotes)
 	Remotes = networkRemotes
-	
 	local CheckpointsFolder = Workspace:WaitForChild("Checkpoints", 10)
 	if not CheckpointsFolder then return end
 
 	local function bindCheckpoint(cp)
 		if cp:IsA("BasePart") then
-			-- Simpan warna asli jika belum disimpan
 			if not originalColors[cp] and (cp.Name:match("^CP") or cp.Name == "FinishPart") then
 				originalColors[cp] = cp.Color
 			end
@@ -118,26 +98,19 @@ function CheckpointController.Init(networkRemotes)
 			cp.Touched:Connect(function(hit)
 				local char = hit.Parent
 				if char and char == Players.LocalPlayer.Character then
-					
-					-- JIKA MENGINJAK RESET PART / START
 					if cp.Name == "ResetPart" then
-						-- 1. TELEPORT INSTAN DI SISI CLIENT (Anti Delay/Nyangkut)
 						local root = char:FindFirstChild("HumanoidRootPart")
 						if root then
 							local spawnLoc = Workspace:FindFirstChildWhichIsA("SpawnLocation")
 							local targetCFrame = spawnLoc and CFrame.new(spawnLoc.Position + Vector3.new(0, 3, 0)) or CFrame.new(0, 5, 0)
-							
-							-- Hentikan momentum jatuh agar karakter tidak nge-bug/mental
 							root.AssemblyLinearVelocity = Vector3.zero
 							root.AssemblyAngularVelocity = Vector3.zero
 							root.CFrame = targetCFrame
 						end
 
-						-- 2. RESET VISUAL PANAH & WARNA
 						if currentCheckpoint == nil then return end 
 						currentCheckpoint = nil
 						
-						-- Kembalikan semua warna CP ke aslinya
 						for part, color in pairs(originalColors) do
 							TweenService:Create(part, TweenInfo.new(0.5), {Color = color}):Play()
 						end
@@ -149,7 +122,7 @@ function CheckpointController.Init(networkRemotes)
 						end
 						return
 					end
-					-- JIKA MENGINJAK CHECKPOINT / FINISH
+					
 					if cp.Name:match("^CP") or cp.Name == "FinishPart" then
 						local touchedNum = tonumber(cp.Name:match("^CP(%d+)$")) or (cp.Name == "FinishPart" and 9999) or 0
 						local currentNum = 0
@@ -161,7 +134,6 @@ function CheckpointController.Init(networkRemotes)
 							currentCheckpoint = cp.Name
 							Remotes.UpdateCheckpoint:FireServer(cp)
 							
-							-- Warnai CP yang terlewati jadi Hijau
 							for i = currentNum + 1, touchedNum do
 								local prevCP = CheckpointsFolder:FindFirstChild("CP" .. i)
 								if prevCP then
@@ -180,7 +152,6 @@ function CheckpointController.Init(networkRemotes)
 							end
 						end
 					end
-					
 				end
 			end)
 		end
@@ -191,7 +162,6 @@ function CheckpointController.Init(networkRemotes)
 	end
 	CheckpointsFolder.ChildAdded:Connect(bindCheckpoint)
 	
-	-- Sinkronisasi saat player join
 	task.spawn(function()
 		task.wait(1) 
 		local savedPos = Remotes.GetCheckpoint:InvokeServer()
