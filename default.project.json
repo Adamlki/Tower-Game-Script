@@ -58,7 +58,7 @@
           0
         ],
         "Brightness": 2,
-        "GlobalShadows": true,
+        "GlobalShadows": false,
         "Outlines": false,
         "Technology": "Voxel"
       }

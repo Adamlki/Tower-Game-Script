@@ -20,6 +20,7 @@ local AdminUIController = require(Controllers:WaitForChild("AdminUIController"))
 local ShopController = require(Controllers:WaitForChild("ShopController"))
 local MenuKananController = require(Controllers:WaitForChild("MenuKananController"))
 local HideUIController = require(Controllers:WaitForChild("HideUIController"))
+local UfoController = require(Controllers:WaitForChild("UfoController"))
 
 -- Initialize Controllers
 TrollController.Init(Network)
@@ -31,5 +32,6 @@ AdminUIController.Init(Network)
 ShopController.Init(Network)
 MenuKananController.Init(Network)
 HideUIController.Init(Network)
+UfoController.Init()
 
 print("Client Systems Initialized")
