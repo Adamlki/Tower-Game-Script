@@ -17,7 +17,7 @@ function TrollController.Init(networkRemotes)
 	local PlayerGui = Players.LocalPlayer:WaitForChild("PlayerGui")
 	
 	-- Menu Utama (Troll Button)
-	local MenuUtama = PlayerGui:WaitForChild("MenuUtama")
+	local MenuUtama = PlayerGui:WaitForChild("MenuUtama",10)
 	local TrollBtn = MenuUtama:WaitForChild("MainFrame"):WaitForChild("TrollBtn")
 	
 	-- Select Troll Gui
@@ -130,6 +130,10 @@ function TrollController.TogglePanel()
 	local PlayerGui = Players.LocalPlayer:WaitForChild("PlayerGui")
 	local TrollGui = PlayerGui:WaitForChild("SelectTrollGui")
 	
+	-- Ambil WinnerGui MainFrame
+	local WinnerGui = PlayerGui:FindFirstChild("WinnerGui")
+	local WinnerFrame = WinnerGui and WinnerGui:FindFirstChild("MainFrame")
+	
 	panelOpen = not panelOpen
 	
 	if panelOpen then
@@ -144,6 +148,9 @@ function TrollController.TogglePanel()
 		local JumpGui = PlayerGui:WaitForChild("JumpUpgradeGui")
 		UIManager.AnimateFrameOut(MenuUtama:WaitForChild("MainFrame"))
 		UIManager.AnimateFrameOut(JumpGui:WaitForChild("Frame"))
+		
+		-- [BARU]: Sembunyikan WinnerGui saat panel Troll buka
+		if WinnerFrame then UIManager.AnimateFrameOut(WinnerFrame) end
 		
 		local MenuKanan = PlayerGui:FindFirstChild("MenuKanan")
 		if MenuKanan then
@@ -170,6 +177,9 @@ function TrollController.TogglePanel()
 		UIManager.AnimateFrameIn(MenuUtama:WaitForChild("MainFrame"))
 		UIManager.AnimateFrameIn(JumpGui:WaitForChild("Frame"))
 		
+		-- [BARU]: Munculkan kembali WinnerGui saat panel Troll tutup
+		if WinnerFrame then UIManager.AnimateFrameIn(WinnerFrame) end
+		
 		local MenuKanan = PlayerGui:FindFirstChild("MenuKanan")
 		if MenuKanan then
 			UIManager.AnimateFrameIn(MenuKanan:FindFirstChild("MainFrame"))
@@ -181,7 +191,6 @@ function TrollController.TogglePanel()
 		end
 	end
 end
-
 
 
 function TrollController.ExecuteTroll(trollType)

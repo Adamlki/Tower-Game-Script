@@ -28,7 +28,7 @@ function ShopController.Init(networkRemotes)
 	
 	local PlayerGui = Players.LocalPlayer:WaitForChild("PlayerGui")
 	
-	local MenuUtama = PlayerGui:WaitForChild("MenuUtama")
+	local MenuUtama = PlayerGui:WaitForChild("MenuUtama",10)
 	local MainFrame = MenuUtama:WaitForChild("MainFrame")
 	local Shopbtn = MainFrame:WaitForChild("Shopbtn")
 	local ShopFrame = MenuUtama:WaitForChild("ShopFrame")
@@ -43,6 +43,11 @@ function ShopController.Init(networkRemotes)
 	
 	local function toggleShop()
 		shopOpen = not shopOpen
+		
+		-- Ambil WinnerGui MainFrame
+		local WinnerGui = PlayerGui:FindFirstChild("WinnerGui")
+		local WinnerFrame = WinnerGui and WinnerGui:FindFirstChild("MainFrame")
+		
 		if shopOpen then
 			-- Show Shop
 			ShopFrame.Visible = true
@@ -51,6 +56,10 @@ function ShopController.Init(networkRemotes)
 			
 			-- Hide other UIs
 			UIManager.AnimateFrameOut(MainFrame)
+			
+			-- [BARU]: Sembunyikan WinnerGui saat toko buka
+			if WinnerFrame then UIManager.AnimateFrameOut(WinnerFrame) end
+			
 			local MenuKanan = PlayerGui:FindFirstChild("MenuKanan")
 			if MenuKanan then
 				UIManager.AnimateFrameOut(MenuKanan:FindFirstChild("MainFrame"))
@@ -74,6 +83,10 @@ function ShopController.Init(networkRemotes)
 			
 			-- Show other UIs
 			UIManager.AnimateFrameIn(MainFrame)
+			
+			-- [BARU]: Munculkan kembali WinnerGui saat toko tutup
+			if WinnerFrame then UIManager.AnimateFrameIn(WinnerFrame) end
+			
 			local MenuKanan = PlayerGui:FindFirstChild("MenuKanan")
 			if MenuKanan then
 				UIManager.AnimateFrameIn(MenuKanan:FindFirstChild("MainFrame"))

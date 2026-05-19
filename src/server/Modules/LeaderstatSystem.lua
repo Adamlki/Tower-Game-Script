@@ -3,7 +3,90 @@ local Workspace = game:GetService("Workspace")
 
 local LeaderstatSystem = {}
 local CheckpointSystem = require(script.Parent.CheckpointSystem)
+local DataSystem = require(script.Parent.DataSystem)
 local debounces = {}
+
+-- [OPTIMASI SERVER]: Cache memori untuk menyimpan Nama dan Foto Profil agar tidak lag
+local UserInfoCache = {}
+
+-- [[ FUNGSI UPDATE PAPAN LEADERBOARD GLOBAL ]]
+local function updateGlobalLeaderboard()
+	local boardModel = Workspace:FindFirstChild("WinnerLeaderboard")
+	if not boardModel then return end
+	
+	local papan = boardModel:FindFirstChild("Papan")
+	if not papan then return end
+	
+	local surfaceGui = papan:FindFirstChild("SurfaceGui")
+	if not surfaceGui then return end
+	
+	local frame = surfaceGui:FindFirstChild("Frame")
+	if not frame then return end
+	
+	local template = frame:FindFirstChild("MainFrame")
+	if not template then return end
+	template.Visible = false -- Skrip otomatis menyembunyikan template asli milikmu
+	
+	-- Ambil data top 50 langsung dari DataStore
+	local pages = DataSystem.GetTopWins(50)
+	
+	if pages then
+		-- Hapus data list lama (kecuali template)
+		for _, child in ipairs(frame:GetChildren()) do
+			if child:IsA("Frame") and child.Name ~= "MainFrame" then
+				child:Destroy()
+			end
+		end
+		
+		local data = pages:GetCurrentPage()
+		for rank, entry in ipairs(data) do
+			local userId = tonumber(entry.key)
+			local totalWins = entry.value
+			
+			local clone = template:Clone()
+			clone.Name = "Rank_" .. rank
+			clone.Visible = true
+			
+			-- [PENTING]: Set LayoutOrder sesuai ranking agar terurut benar di UIListLayout
+			clone.LayoutOrder = rank 
+			
+			-- [OPTIMASI API]: Cek apakah data nama & foto player sudah ada di memori server
+			if not UserInfoCache[userId] then
+				local username = "Unknown Player"
+				local thumbUrl = "rbxassetid://0"
+				
+				-- Jika belum ada, download dari Roblox (hanya dilakukan sekali per pemain baru)
+				pcall(function()
+					username = Players:GetNameFromUserIdAsync(userId)
+					thumbUrl = Players:GetUserThumbnailAsync(userId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size420x420)
+				end)
+				
+				UserInfoCache[userId] = {
+					Name = username,
+					Image = thumbUrl
+				}
+			end
+			
+			-- Ambil data dari Cache agar instan
+			local cachedData = UserInfoCache[userId]
+			
+			if clone:FindFirstChild("NameFrame") and clone.NameFrame:FindFirstChild("TextLabel") then
+				clone.NameFrame.TextLabel.Text = "#" .. rank .. " " .. cachedData.Name
+			end
+			
+			if clone:FindFirstChild("WinnerFrame") and clone.WinnerFrame:FindFirstChild("TextLabel") then
+				clone.WinnerFrame.TextLabel.Text = tostring(totalWins) .. " Wins"
+			end
+			
+			if clone:FindFirstChild("ImagePlayerFrame") and clone.ImagePlayerFrame:FindFirstChild("ImageLabel") then
+				clone.ImagePlayerFrame.ImageLabel.Image = cachedData.Image
+			end
+			
+			clone.Parent = frame
+		end
+	end
+end
+
 
 function LeaderstatSystem.Init()
 	local function onPlayerAdded(player)
@@ -17,15 +100,38 @@ function LeaderstatSystem.Init()
 		wins.Name = "Wins"
 		wins.Value = 0
 		wins.Parent = leaderstats
+		
+		wins.Value = DataSystem.LoadWins(player.UserId)
+		
+		wins.Changed:Connect(function(newValue)
+			DataSystem.SaveWins(player.UserId, newValue)
+		end)
 	end
 	
 	Players.PlayerAdded:Connect(onPlayerAdded)
+	
+	Players.PlayerRemoving:Connect(function(player)
+		local leaderstats = player:FindFirstChild("leaderstats")
+		if leaderstats then
+			local wins = leaderstats:FindFirstChild("Wins")
+			if wins then
+				DataSystem.SaveWins(player.UserId, wins.Value)
+			end
+		end
+	end)
 	
 	for _, player in ipairs(Players:GetPlayers()) do
 		onPlayerAdded(player)
 	end
 	
-	-- Setup FinishPart touch event
+	-- [REFRESH RATE]: Update Papan Global setiap 30 Detik
+	task.spawn(function()
+		while true do
+			updateGlobalLeaderboard()
+			task.wait(30)
+		end
+	end)
+	
 	local function teleportToSpawn(player)
 		local char = player.Character
 		if not char then return end
@@ -42,7 +148,6 @@ function LeaderstatSystem.Init()
 
 	local hasFinished = {}
 
-	-- Setup FinishPart touch event
 	local function setupFinishPart(finishPart)
 		finishPart.Touched:Connect(function(hit)
 			local char = hit.Parent
@@ -53,7 +158,6 @@ function LeaderstatSystem.Init()
 					debounces[player.UserId] = true
 					hasFinished[player.UserId] = true
 					
-					-- Add Win
 					local leaderstats = player:FindFirstChild("leaderstats")
 					if leaderstats then
 						local wins = leaderstats:FindFirstChild("Wins")
@@ -62,9 +166,6 @@ function LeaderstatSystem.Init()
 						end
 					end
 					
-					-- No longer resetting checkpoint or teleporting here
-					
-					-- Cooldown
 					task.wait(2)
 					debounces[player.UserId] = nil
 				end
@@ -72,7 +173,6 @@ function LeaderstatSystem.Init()
 		end)
 	end
 	
-	-- Setup ResetPart touch event
 	local function setupResetPart(resetPart)
 		resetPart.Touched:Connect(function(hit)
 			local char = hit.Parent
@@ -81,15 +181,11 @@ function LeaderstatSystem.Init()
 			if player then
 				if not debounces[player.UserId] then
 					debounces[player.UserId] = true
-					
-					-- Allow them to win again on the next run
 					hasFinished[player.UserId] = nil
 					
-					-- Just Reset Checkpoint & Teleport
 					CheckpointSystem.ResetCheckpoint(player)
 					teleportToSpawn(player)
 					
-					-- Cooldown
 					task.wait(2)
 					debounces[player.UserId] = nil
 				end
@@ -114,8 +210,7 @@ function LeaderstatSystem.Init()
 		if finishPart then setupFinishPart(finishPart) end
 		if resetPart then setupResetPart(resetPart) end
 		
-		local conn
-		conn = Workspace.DescendantAdded:Connect(function(desc)
+		Workspace.DescendantAdded:Connect(function(desc)
 			if desc:IsA("BasePart") then
 				if desc.Name == "FinishPart" then
 					setupFinishPart(desc)

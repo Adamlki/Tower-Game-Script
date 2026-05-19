@@ -26,7 +26,7 @@ local Remotes = {
 	
 	-- Troll Remotes
 	ExecuteTroll = CreateRemote("RemoteFunction", "ExecuteTroll"),
-	TrollEffect = CreateRemote("RemoteEvent", "TrollEffect"), -- Server to Client visual effects (e.g., Jumpscare)
+	TrollEffect = CreateRemote("RemoteEvent", "TrollEffect"), 
 	
 	-- Jump Remotes
 	UpdateJump = CreateRemote("RemoteFunction", "UpdateJump"),
@@ -41,7 +41,10 @@ local Remotes = {
 	
 	-- UI Trigger Remotes
 	ShowPopup = CreateRemote("RemoteEvent", "ShowPopup"),
-	ClaimGroupReward = CreateRemote("RemoteFunction", "ClaimGroupReward")
+	ClaimGroupReward = CreateRemote("RemoteFunction", "ClaimGroupReward"),
+	
+	-- [BARU] TAMBAHKAN BARIS INI UNTUK MEMPERBAIKI CRASH:
+	ExecuteSkip = CreateRemote("RemoteFunction", "ExecuteSkip")
 }
 
 -- Load Systems

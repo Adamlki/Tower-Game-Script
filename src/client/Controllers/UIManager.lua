@@ -409,18 +409,30 @@ function UIManager.ShowNotification(message, isError)
 	end
 	
 	if gradient then
+		local ReplicatedStorage = game:GetService("ReplicatedStorage")
+		local SoundService = game:GetService("SoundService")
+		local soundFolder = ReplicatedStorage:FindFirstChild("SoundNotif")
+		
 		if isError then
 			-- Merah: untuk korban troll / error
 			gradient.Color = ColorSequence.new{
 				ColorSequenceKeypoint.new(0, Color3.fromRGB(200, 50, 50)),
 				ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 100, 100))
 			}
+			-- Play Sound Error (Merah)
+			if soundFolder and soundFolder:FindFirstChild("NotifFalse") then
+				SoundService:PlayLocalSound(soundFolder.NotifFalse)
+			end
 		else
 			-- Hijau: untuk berhasil troll / upgrade sukses
 			gradient.Color = ColorSequence.new{
 				ColorSequenceKeypoint.new(0, Color3.fromRGB(50, 180, 50)),
 				ColorSequenceKeypoint.new(1, Color3.fromRGB(100, 255, 100))
 			}
+			-- Play Sound Success (Hijau)
+			if soundFolder and soundFolder:FindFirstChild("NotifTrue") then
+				SoundService:PlayLocalSound(soundFolder.NotifTrue)
+			end
 		end
 	end
 	
