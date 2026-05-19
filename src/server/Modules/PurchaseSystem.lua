@@ -1,7 +1,6 @@
 local MarketplaceService = game:GetService("MarketplaceService")
-local DataStoreService = game:GetService("DataStoreService")
-local PurchaseStore = DataStoreService:GetDataStore("PurchaseHistory_v1")
 local Config = require(game:GetService("ReplicatedStorage"):WaitForChild("Shared"):WaitForChild("Config"))
+local DataSystem = require(script.Parent:WaitForChild("DataSystem")) -- Memanggil DataSystem
 
 local PurchaseSystem = {}
 local Systems = {}
@@ -15,26 +14,18 @@ function PurchaseSystem.Init(Remotes, loadedSystems)
 			return Enum.ProductPurchaseDecision.NotProcessedYet
 		end
 		
-		-- Check if already processed (basic protection against double purchase)
-		local success, isProcessed = pcall(function()
-			return PurchaseStore:GetAsync(receiptInfo.PurchaseId)
-		end)
-		if success and isProcessed then
+		-- Cek apakah struk belanja sudah pernah diproses di database
+		local isProcessed = DataSystem.IsPurchaseProcessed(receiptInfo.PurchaseId)
+		if isProcessed then
 			return Enum.ProductPurchaseDecision.PurchaseGranted
 		end
 		
 		local productId = receiptInfo.ProductId
 		local granted = false
 		
-		-- Troll Products
+		-- Proses Produk Troll
 		for trollName, id in pairs(Config.TrollProducts) do
 			if id == productId then
-				-- We don't know the target from receiptInfo. We have to store a pending target or handle it.
-				-- A simpler way is to handle troll target via a remote event *after* purchase,
-				-- but robust systems store pending purchases. 
-				-- For this game, we'll assume the client sent the target right before prompt and we saved it,
-				-- OR we just grant the troll right and let the client execute it once.
-				-- Let's use a PendingTrolls cache
 				if PurchaseSystem.PendingTrolls and PurchaseSystem.PendingTrolls[player.UserId] then
 					local pending = PurchaseSystem.PendingTrolls[player.UserId]
 					if pending.Type == trollName then
@@ -46,24 +37,17 @@ function PurchaseSystem.Init(Remotes, loadedSystems)
 			end
 		end
 		
-		-- Jump Products
+		-- Proses Produk Jump Upgrade
 		for level, id in pairs(Config.JumpProducts) do
 			if id == productId then
-				-- Give jump level to player
-				-- Usually saved in DataStore
-				local JumpSystemStore = DataStoreService:GetDataStore("JumpLevel_v1")
-				pcall(function()
-					local current = JumpSystemStore:GetAsync(player.UserId) or 1
-					if level > current then
-						JumpSystemStore:SetAsync(player.UserId, level)
-					end
-				end)
+				-- Simpan level lompatan ke database via DataSystem
+				DataSystem.SaveJumpLevel(player.UserId, level)
 				Remotes.UpdateJump:InvokeClient(player, level)
 				granted = true
 			end
 		end
 		
-		-- Checkpoint Products
+		-- Proses Produk Checkpoint
 		if productId == Config.Products.SkipCheckpoint then
 			granted = Systems.Checkpoint.SkipCheckpoint(player)
 		elseif productId == Config.Products.SkipNextStage then
@@ -73,19 +57,17 @@ function PurchaseSystem.Init(Remotes, loadedSystems)
 		end
 		
 		if granted then
-			pcall(function()
-				PurchaseStore:SetAsync(receiptInfo.PurchaseId, true)
-			end)
+			-- Tandai bahwa struk ini sudah sukses diproses di database
+			DataSystem.MarkPurchaseProcessed(receiptInfo.PurchaseId)
 			return Enum.ProductPurchaseDecision.PurchaseGranted
 		else
 			return Enum.ProductPurchaseDecision.NotProcessedYet
 		end
 	end
 	
-	-- Store pending troll target before prompting
+	-- Cache sementara untuk target Troll
 	PurchaseSystem.PendingTrolls = {}
 	Remotes.ExecuteTroll.OnServerInvoke = function(player, trollType, targetUserId)
-		-- Intercept ExecuteTroll to set pending if not admin
 		if Systems.Admin.IsAdmin(player.UserId) then
 			return Systems.Troll.ApplyTroll(player, trollType, targetUserId)
 		else
@@ -97,40 +79,32 @@ function PurchaseSystem.Init(Remotes, loadedSystems)
 		end
 	end
 	
+	-- Mengambil level Jump dari database
 	Remotes.GetJumpLevel.OnServerInvoke = function(player)
 		if Systems.Admin.IsAdmin(player.UserId) then
-			return 5 -- Admin gets max jumps automatically
+			return 5 -- Admin otomatis dapat jump maksimal
 		end
-		
-		local JumpSystemStore = DataStoreService:GetDataStore("JumpLevel_v1")
-		local success, current = pcall(function()
-			return JumpSystemStore:GetAsync(player.UserId)
-		end)
-		return (success and current) or 1
+		return DataSystem.GetJumpLevel(player.UserId)
 	end
 	
-	-- Intercept ExecuteSkip agar divalidasi dulu sebelum prompt beli/gratis
+	-- Mengeksekusi Checkpoint Skip
 	Remotes.ExecuteSkip.OnServerInvoke = function(player, skipType)
 		local canSkip = true
 		local msg = ""
 		
-		-- Lakukan validasi berdasarkan tipe skip
 		if skipType == "SkipNextStage" then
 			canSkip, msg = Systems.Checkpoint.CanSkipNextStage(player)
 		elseif skipType == "SkipToFinish" then
 			canSkip, msg = Systems.Checkpoint.CanSkipToFinish(player)
 		end
 		
-		-- Jika validasi gagal (sudah finish / di cp terakhir)
 		if not canSkip then
 			if Remotes and Remotes.TrollEffect then
-				-- Kirim notif merah ke player, true = isError (warna merah)
 				Remotes.TrollEffect:FireClient(player, "Notif", msg, true)
 			end
-			return false, "NotAllowed" -- Beri tahu klien untuk Batal memunculkan prompt beli
+			return false, "NotAllowed"
 		end
 		
-		-- Jika boleh skip, cek apakah dia Admin (gratis)
 		if Systems.Admin.IsAdmin(player.UserId) then
 			if skipType == "SkipNextStage" then
 				Systems.Checkpoint.SkipNextStage(player)
@@ -141,7 +115,6 @@ function PurchaseSystem.Init(Remotes, loadedSystems)
 			end
 		end
 		
-		-- Jika player biasa dan valid, beri izin prompt pembelian
 		return false, "PromptPurchase"
 	end
 end

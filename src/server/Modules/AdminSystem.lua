@@ -1,20 +1,19 @@
-local DataStoreService = game:GetService("DataStoreService")
-local AdminStore = DataStoreService:GetDataStore("AdminList_v1")
 local Config = require(game:GetService("ReplicatedStorage"):WaitForChild("Shared"):WaitForChild("Config"))
+local DataSystem = require(script.Parent:WaitForChild("DataSystem")) -- Memanggil DataSystem
 
 local AdminSystem = {}
 local Cache = {} -- [userId] = true
 
 local function loadAdmins()
-	local success, data = pcall(function()
-		return AdminStore:GetAsync("Admins")
-	end)
-	if success and data then
+	-- Mengambil data via DataSystem
+	local data = DataSystem.LoadAdmins()
+	if data then
 		for _, id in ipairs(data) do
 			Cache[id] = true
 		end
 	end
-	-- Owner is always admin
+	
+	-- Owner selalu otomatis jadi admin
 	if Config.OwnerId then
 		Cache[Config.OwnerId] = true
 	end
@@ -23,13 +22,12 @@ end
 local function saveAdmins()
 	local adminList = {}
 	for id, _ in pairs(Cache) do
-		if id ~= Config.OwnerId then -- No need to save owner
+		if id ~= Config.OwnerId then -- Tidak perlu menyimpan owner ke database
 			table.insert(adminList, id)
 		end
 	end
-	pcall(function()
-		AdminStore:SetAsync("Admins", adminList)
-	end)
+	-- Menyimpan data via DataSystem
+	DataSystem.SaveAdmins(adminList)
 end
 
 function AdminSystem.IsAdmin(userId)
