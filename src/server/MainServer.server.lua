@@ -38,6 +38,7 @@ local Remotes = {
 	GetCheckpoint = CreateRemote("RemoteFunction", "GetCheckpoint"),
 	TeleportToCheckpoint = CreateRemote("RemoteEvent", "TeleportToCheckpoint"),
 	DemoteCheckpoint = CreateRemote("RemoteEvent", "DemoteCheckpoint"),
+	ExecuteSkip = CreateRemote("RemoteFunction", "ExecuteSkip"),
 	
 	-- UI Trigger Remotes
 	ShowPopup = CreateRemote("RemoteEvent", "ShowPopup"),

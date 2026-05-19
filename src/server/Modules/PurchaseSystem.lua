@@ -108,6 +108,42 @@ function PurchaseSystem.Init(Remotes, loadedSystems)
 		end)
 		return (success and current) or 1
 	end
+	
+	-- Intercept ExecuteSkip agar divalidasi dulu sebelum prompt beli/gratis
+	Remotes.ExecuteSkip.OnServerInvoke = function(player, skipType)
+		local canSkip = true
+		local msg = ""
+		
+		-- Lakukan validasi berdasarkan tipe skip
+		if skipType == "SkipNextStage" then
+			canSkip, msg = Systems.Checkpoint.CanSkipNextStage(player)
+		elseif skipType == "SkipToFinish" then
+			canSkip, msg = Systems.Checkpoint.CanSkipToFinish(player)
+		end
+		
+		-- Jika validasi gagal (sudah finish / di cp terakhir)
+		if not canSkip then
+			if Remotes and Remotes.TrollEffect then
+				-- Kirim notif merah ke player, true = isError (warna merah)
+				Remotes.TrollEffect:FireClient(player, "Notif", msg, true)
+			end
+			return false, "NotAllowed" -- Beri tahu klien untuk Batal memunculkan prompt beli
+		end
+		
+		-- Jika boleh skip, cek apakah dia Admin (gratis)
+		if Systems.Admin.IsAdmin(player.UserId) then
+			if skipType == "SkipNextStage" then
+				Systems.Checkpoint.SkipNextStage(player)
+				return true, "AdminSuccess"
+			elseif skipType == "SkipToFinish" then
+				Systems.Checkpoint.SkipToFinish(player)
+				return true, "AdminSuccess"
+			end
+		end
+		
+		-- Jika player biasa dan valid, beri izin prompt pembelian
+		return false, "PromptPurchase"
+	end
 end
 
 return PurchaseSystem

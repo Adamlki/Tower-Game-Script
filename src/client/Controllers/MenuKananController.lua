@@ -5,8 +5,11 @@ local Config = require(game:GetService("ReplicatedStorage"):WaitForChild("Shared
 
 local MenuKananController = {}
 local UIManager = require(script.Parent.UIManager)
+local Remotes = nil
 
 function MenuKananController.Init(networkRemotes)
+	Remotes = networkRemotes
+	
 	local PlayerGui = Players.LocalPlayer:WaitForChild("PlayerGui")
 	
 	local MenuKanan = PlayerGui:WaitForChild("MenuKanan")
@@ -41,13 +44,17 @@ function MenuKananController.Init(networkRemotes)
 						SocialService:PromptGameInvite(Players.LocalPlayer)
 					end
 				elseif child.Name == "SkipStageBtn" and child:FindFirstChild("HargaLabel") then
-					-- Skip Stage
-					if Config.Products.SkipNextStage then
+					-- Coba Skip via server
+					local success, status = Remotes.ExecuteSkip:InvokeServer("SkipNextStage")
+					-- Hanya munculkan menu beli jika statusnya PromptPurchase (Bukan NotAllowed)
+					if not success and status == "PromptPurchase" and Config.Products.SkipNextStage then
 						MarketplaceService:PromptProductPurchase(Players.LocalPlayer, Config.Products.SkipNextStage)
 					end
 				elseif child.Name == "SkipToFinishBtn" then
-					-- Skip To Finish
-					if Config.Products.SkipToFinish then
+					-- Coba Skip via server
+					local success, status = Remotes.ExecuteSkip:InvokeServer("SkipToFinish")
+					-- Hanya munculkan menu beli jika statusnya PromptPurchase (Bukan NotAllowed)
+					if not success and status == "PromptPurchase" and Config.Products.SkipToFinish then
 						MarketplaceService:PromptProductPurchase(Players.LocalPlayer, Config.Products.SkipToFinish)
 					end
 				end

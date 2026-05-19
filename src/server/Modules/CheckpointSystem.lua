@@ -87,11 +87,48 @@ function CheckpointSystem.SkipCheckpoint(player)
 	return false
 end
 
-function CheckpointSystem.SkipNextStage(player)
+function CheckpointSystem.CanSkipNextStage(player)
 	local cpPart = getTopCheckpoint(player.UserId)
+	
+	-- 1. Cek jika player sudah di garis finish
+	if cpPart and cpPart.Name == "FinishPart" then
+		return false, "Kamu sudah selesai! Tidak bisa Skip Stage."
+	end
+	
+	-- 2. Cek apakah CP berikutnya ada
 	local currentNum = 0
 	if cpPart and cpPart.Name:match("^CP(%d+)$") then
 		currentNum = tonumber(cpPart.Name:match("^CP(%d+)$"))
+	end
+	
+	local nextNum = currentNum + 1
+	local nextCP = workspace:FindFirstChild("Checkpoints") and workspace.Checkpoints:FindFirstChild("CP" .. nextNum)
+	
+	if not nextCP then
+		return false, "Di depan sudah Finish! Gunakan Skip To Finish."
+	end
+	
+	return true, ""
+end
+
+function CheckpointSystem.CanSkipToFinish(player)
+	local cpPart = getTopCheckpoint(player.UserId)
+	if cpPart and cpPart.Name == "FinishPart" then
+		return false, "Kamu sudah berada di garis Finish!"
+	end
+	return true, ""
+end
+
+function CheckpointSystem.SkipNextStage(player)
+	local cpPart = getTopCheckpoint(player.UserId)
+	local currentNum = 0
+	local currentName = "Spawn" -- Default jika belum kena CP apapun
+	
+	if cpPart and cpPart.Name:match("^CP(%d+)$") then
+		currentNum = tonumber(cpPart.Name:match("^CP(%d+)$"))
+		currentName = cpPart.Name
+	elseif cpPart then
+		currentName = cpPart.Name
 	end
 	
 	local nextNum = currentNum + 1
@@ -106,6 +143,12 @@ function CheckpointSystem.SkipNextStage(player)
 		if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
 			player.Character.HumanoidRootPart.CFrame = CFrame.new(nextCP.Position + Vector3.new(0, 3, 0))
 		end
+		
+		-- Kirim Notifikasi Sukses (DIPERBAIKI DI SINI)
+		if Remotes and Remotes.TrollEffect then
+			Remotes.TrollEffect:FireClient(player, "Notif", "Berhasil skip stage dari " .. currentName .. " ke " .. nextCP.Name .. "!", false)
+		end
+		
 		return true
 	end
 	return false
@@ -122,6 +165,12 @@ function CheckpointSystem.SkipToFinish(player)
 		if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
 			player.Character.HumanoidRootPart.CFrame = CFrame.new(finishPart.Position + Vector3.new(0, 3, 0))
 		end
+		
+		-- Kirim Notifikasi Sukses (DIPERBAIKI DI SINI)
+		if Remotes and Remotes.TrollEffect then
+			Remotes.TrollEffect:FireClient(player, "Notif", "Kamu berhasil Skip To Finish!", false)
+		end
+		
 		return true
 	end
 	return false
