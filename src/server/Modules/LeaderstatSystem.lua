@@ -38,7 +38,7 @@ local function updateTop3Statues(data)
 			if UserInfoCache[userId] and UserInfoCache[userId].Name ~= "Unknown Player" then
 				nickname = UserInfoCache[userId].Name
 			else
-				-- Jika nama belum ada di memori, download langsung dari Roblox!
+				-- Jika data belum ada di memori, download langsung dari Roblox!
 				pcall(function()
 					local UserService = game:GetService("UserService")
 					local userInfo = UserService:GetUserInfosByUserIdsAsync({userId})
@@ -48,9 +48,13 @@ local function updateTop3Statues(data)
 						nickname = game:GetService("Players"):GetNameFromUserIdAsync(userId) -- Cadangan Username
 					end
 					
-					-- Simpan ke memori agar 30 detik berikutnya tidak perlu download lagi
+					-- Sekalian download foto profilnya agar tidak error di papan Leaderboard 2D
+					local thumbUrl = game:GetService("Players"):GetUserThumbnailAsync(userId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size420x420)
+					
+					-- Simpan Nama dan Foto ke memori
 					if not UserInfoCache[userId] then UserInfoCache[userId] = {} end
 					UserInfoCache[userId].Name = nickname
+					UserInfoCache[userId].Image = thumbUrl
 				end)
 			end
 
@@ -83,6 +87,10 @@ local function updateTop3Statues(data)
 				
 				local hrp = dummy:FindFirstChild("HumanoidRootPart")
 				local hum = dummy:FindFirstChild("Humanoid")
+				-- 🔴 TAMBAHKAN BARIS INI UNTUK MENGHILANGKAN TULISAN "Statue"
+				if hum then
+					hum.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
+				end
 				
 				if hrp and hum then
 					-- 2. Kunci perutnya saja (HRP) agar dia tidak jatuh ke tanah
@@ -123,7 +131,7 @@ local function updateTop3Statues(data)
 					local cloneGui = guiTemplate:Clone()
 					cloneGui.Adornee = dummy:FindFirstChild("Head") or hrp
 					cloneGui.ExtentsOffset = Vector3.new(0, 1.5, 0)
-					cloneGui.Parent = head
+					cloneGui.Parent = dummy
 					
 					local frame = cloneGui:FindFirstChild("Frame")
 					if frame then
@@ -170,9 +178,21 @@ local function updateGlobalLeaderboard()
 			end
 		end
 		
-		local data = pages:GetCurrentPage()
-		updateTop3Statues(data)
-		for rank, entry in ipairs(data) do
+		local rawData = pages:GetCurrentPage()
+		
+		-- 🔴 FILTER: Hanya ambil pemain yang nilai Win-nya lebih dari 0
+		local validData = {}
+		for _, entry in ipairs(rawData) do
+			if entry.value > 0 then
+				table.insert(validData, entry)
+			end
+		end
+		
+		-- Masukkan data yang sudah disaring ke patung 3D
+		updateTop3Statues(validData)
+		
+		-- Masukkan data yang sudah disaring ke papan UI 2D
+		for rank, entry in ipairs(validData) do
 			local userId = tonumber(entry.key)
 			local totalWins = entry.value
 			

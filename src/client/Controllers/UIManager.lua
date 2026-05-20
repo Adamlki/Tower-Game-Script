@@ -106,7 +106,7 @@ function UIManager.ApplyShakeEffect(guiObj)
 end
 
 -- [[ SYSTEM MANAJEMEN HUD GLOBAL ]]
-local gameplayGuis = {"MenuUtama", "JumpUpgradeGui", "WinnerGui", "MenuKanan", "HideGui"}
+local gameplayGuis = {"MenuUtama", "JumpUpgradeGui", "WinnerGui", "MenuKanan"}
 
 function UIManager.HideAllGameplayHUD(playerGui)
 	for _, guiName in ipairs(gameplayGuis) do
