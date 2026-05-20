@@ -10,6 +10,137 @@ local debounces = {}
 -- Cache memori untuk menyimpan Nickname dan Foto Profil agar tidak lag
 local UserInfoCache = {}
 
+-- ==========================================
+-- 🏆 SYSTEM PATUNG 3D TOP 3 GLOBAL (FIX MENCAR)
+-- ==========================================
+local function updateTop3Statues(data)
+	local ReplicatedStorage = game:GetService("ReplicatedStorage")
+	
+	local colors = {
+		[1] = Color3.fromRGB(255, 215, 0),
+		[2] = Color3.fromRGB(192, 192, 192),
+		[3] = Color3.fromRGB(205, 127, 50)
+	}
+	local rankNames = {"Top 1", "Top 2", "Top 3"}
+
+	for i = 1, 3 do
+		task.spawn(function()
+			local part = workspace:FindFirstChild("Top" .. i, true) 
+			if not part then return end
+
+			local entry = data[i]
+			if not entry then return end 
+
+			local userId = tonumber(entry.key)
+			local totalWins = entry.value
+
+			local nickname = "Player"
+			if UserInfoCache[userId] and UserInfoCache[userId].Name ~= "Unknown Player" then
+				nickname = UserInfoCache[userId].Name
+			else
+				-- Jika nama belum ada di memori, download langsung dari Roblox!
+				pcall(function()
+					local UserService = game:GetService("UserService")
+					local userInfo = UserService:GetUserInfosByUserIdsAsync({userId})
+					if userInfo and userInfo[1] then
+						nickname = userInfo[1].DisplayName -- Ambil Nickname
+					else
+						nickname = game:GetService("Players"):GetNameFromUserIdAsync(userId) -- Cadangan Username
+					end
+					
+					-- Simpan ke memori agar 30 detik berikutnya tidak perlu download lagi
+					if not UserInfoCache[userId] then UserInfoCache[userId] = {} end
+					UserInfoCache[userId].Name = nickname
+				end)
+			end
+
+			local existingStatue = part:FindFirstChild("Statue")
+			if existingStatue then
+				if existingStatue:GetAttribute("UserId") == userId then
+					local gui = existingStatue:FindFirstChild("LeaderboardGui")
+					if gui and gui:FindFirstChild("Frame") then
+						local winsLabel = gui.Frame:FindFirstChild("WinsLabel")
+						if winsLabel then
+							winsLabel.Text = totalWins .. " 🏆"
+						end
+					end
+					return 
+				else
+					existingStatue:Destroy() 
+				end
+			end
+
+			local success, dummy = pcall(function()
+				return game:GetService("Players"):CreateHumanoidModelFromUserId(userId)
+			end)
+
+			if success and dummy then
+				dummy.Name = "Statue"
+				dummy:SetAttribute("UserId", userId)
+				
+				-- 1. Taruh di map dulu agar mesin Roblox mulai merakit tubuhnya
+				dummy.Parent = part
+				
+				local hrp = dummy:FindFirstChild("HumanoidRootPart")
+				local hum = dummy:FindFirstChild("Humanoid")
+				
+				if hrp and hum then
+					-- 2. Kunci perutnya saja (HRP) agar dia tidak jatuh ke tanah
+					hrp.Anchored = true 
+					
+					-- 3. Pindahkan posisinya ke atas part secara matematis
+					-- Menggunakan part.CFrame agar patung menghadap ke arah yang sama dengan depan Part
+					local yOffset = (part.Size.Y / 2) + hum.HipHeight + (hrp.Size.Y / 2)
+					dummy:PivotTo(part.CFrame * CFrame.new(0, yOffset, 0))
+				end
+				
+				-- 4. KUNCI RAHASIA: Tunggu 1.5 detik agar Roblox selesai memasang baju/kepala/tulang!
+				task.wait(1.5)
+				
+				-- 5. Setelah rapi, baru kita bekukan seluruh tubuhnya jadi patung
+				for _, v in ipairs(dummy:GetDescendants()) do
+					if v:IsA("BasePart") then
+						v.Anchored = true
+						v.CanCollide = false 
+					elseif v:IsA("Script") or v:IsA("LocalScript") then
+						v:Destroy()
+					end
+				end
+				
+				-- 6. Mainkan animasinya
+				if hum then
+					local animator = hum:FindFirstChildOfClass("Animator") or Instance.new("Animator", hum)
+					local anim = Instance.new("Animation")
+					anim.AnimationId = "rbxassetid://110955034311554" 
+					local track = animator:LoadAnimation(anim)
+					track.Looped = true
+					track:Play()
+				end
+
+				-- 7. Tambahkan UI di kepalanya
+				local guiTemplate = ReplicatedStorage:FindFirstChild("LeaderboardGui")
+				if guiTemplate then
+					local cloneGui = guiTemplate:Clone()
+					cloneGui.Adornee = dummy:FindFirstChild("Head") or hrp
+					cloneGui.ExtentsOffset = Vector3.new(0, 1.5, 0)
+					cloneGui.Parent = head
+					
+					local frame = cloneGui:FindFirstChild("Frame")
+					if frame then
+						local rankLabel = frame:FindFirstChild("RankLabel")
+						local nameLabel = frame:FindFirstChild("NameLabel")
+						local winsLabel = frame:FindFirstChild("WinsLabel")
+						
+						if rankLabel then rankLabel.Text = rankNames[i]; rankLabel.TextColor3 = colors[i] end
+						if nameLabel then nameLabel.Text = nickname end
+						if winsLabel then winsLabel.Text = totalWins .. " 🏆" end
+					end
+				end
+			end
+		end)
+	end
+end
+
 -- [[ FUNGSI UPDATE PAPAN LEADERBOARD GLOBAL ]]
 local function updateGlobalLeaderboard()
 	local boardModel = Workspace:FindFirstChild("WinnerLeaderboard")
@@ -40,6 +171,7 @@ local function updateGlobalLeaderboard()
 		end
 		
 		local data = pages:GetCurrentPage()
+		updateTop3Statues(data)
 		for rank, entry in ipairs(data) do
 			local userId = tonumber(entry.key)
 			local totalWins = entry.value
