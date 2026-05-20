@@ -336,7 +336,7 @@ function UIManager.ShowNotification(message, isError)
 	
 	local gradient = clone:FindFirstChild("UIGradient")
 	if gradient then
-		local soundFolder = ReplicatedStorage:FindFirstChild("SoundNotif")
+		local soundFolder = ReplicatedStorage:FindFirstChild("Sound")
 		if isError then
 			gradient.Color = ColorSequence.new{ColorSequenceKeypoint.new(0, Color3.fromRGB(200, 50, 50)), ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 100, 100))}
 			if soundFolder and soundFolder:FindFirstChild("NotifFalse") then game:GetService("SoundService"):PlayLocalSound(soundFolder.NotifFalse) end
