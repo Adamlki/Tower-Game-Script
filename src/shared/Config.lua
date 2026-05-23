@@ -22,19 +22,26 @@ Config.Assets = {
 -- [[ UFO SETTINGS ]]
 Config.UfoSettings = {
 	UFO1 = {
-		DropPosition = Vector3.new(-20.5, 62.5, 592),
+		DropPosition = Vector3.new(22.506, 69.353, 591),
 		LiftingTime = 2,
 		MovingTime = 3,
 		ReturnTime = 3,
 		AnimationId = "rbxassetid://112089880074848",
 	},
 	UFO2 = {
-		DropPosition = Vector3.new(-20.5, 62.5, 592),
+		DropPosition = Vector3.new(56.856, 138.359, 729.014),
 		LiftingTime = 2,
 		MovingTime = 3,
 		ReturnTime = 3,
 		AnimationId = "rbxassetid://112089880074848",
-	}
+	},
+	UFO3 = {
+		DropPosition = Vector3.new(14.856, 158.664, 784.3),
+		LiftingTime = 2,
+		MovingTime = 3,
+		ReturnTime = 3,
+		AnimationId = "rbxassetid://112089880074848",
+	},
 }
 
 -- [[ DEVELOPER PRODUCTS (Troll, Jump, Checkpoint Skip) ]]

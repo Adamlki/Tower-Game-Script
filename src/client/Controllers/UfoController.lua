@@ -28,7 +28,7 @@ function UfoController.Init()
 	for _, ufoModel in ipairs(UfoFolder:GetChildren()) do
 		if ufoModel:IsA("Model") then
 			task.spawn(function()
-				local config = Config.UfoSettings[ufoModel.Name] -- Membaca dari Shared Config
+				local config = Config.UfoSettings[ufoModel.Name] 
 				if not config then return end 
 
 				local lightFolder = ufoModel:WaitForChild("Light")
